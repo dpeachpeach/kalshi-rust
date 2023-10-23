@@ -24,4 +24,6 @@ async fn main() {
     // main testing logic, ignoring unit tests for now
     let mut kalshi_instance = Kalshi::new();
     kalshi_instance.login(&username, &password).await;
+    let token = kalshi_instance.get_user_token().unwrap();
+    println!("{}",token);
 }

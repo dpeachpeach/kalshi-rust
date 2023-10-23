@@ -19,6 +19,12 @@ struct LoginResponse {
     token: String
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct LoginPayload {
+    email: String, 
+    password: String
+}
+
 impl Kalshi {
 
     pub fn new() -> Kalshi {
@@ -32,11 +38,12 @@ impl Kalshi {
 
     pub async fn login(&mut self, user: &str, password: &str) -> Result<(), reqwest::Error> {
         const LOGIN_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/login";
-        let mut login_payload = HashMap::new();
-        login_payload.insert("email", user);
-        login_payload.insert("password", password);
 
-
+        let login_payload = LoginPayload {
+            email: user.to_string(),
+            password: password.to_string(),
+        };
+    
         let result: LoginResponse =  self.client
                                         .post(LOGIN_URL)
                                         .json(&login_payload)
