@@ -12,7 +12,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 ### Project Goals
 1. Complete every function that wraps around the [Kalshi Trading API}(https://trading-api.readme.io/reference/getting-started).
 2. Work on an implementation for websockets (Stretch goal at the moment).
-3. Write a detailed API for a user.
+3. Write detailed documentation.
 4. Write sample_bot that utilizes basic price arbitrage.
 
 ## Feature Roadmap
