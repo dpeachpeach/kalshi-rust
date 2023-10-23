@@ -7,7 +7,7 @@ This is a wrapper for the [Kalshi](https://kalshi.com/) trading API written by a
 ## Featurelist / Roadmap
 
 ### WIP Statement
-As of now this project is a **Work in Progress**, this means the feature list is not complete. Anyone is welcome to try out the API as they see fit, as of now. A sample implementation is present in the *test_dir* directory and I will develop a full arbitrage 'sample bot' at the conclusion of the project for anyone to edit should they choose to clone the repository. 
+As of now this project is a **Work in Progress**, this means the feature list is not complete. Anyone is welcome to try out the API as they see fit. A sample implementation is present in the *test_dir* directory for testing and I will develop a full arbitrage 'sample bot' at the conclusion of the project for anyone to edit / mess around with should they want to start using the API.
 
 ### Project Goals
 1. Complete every function that wraps around the [Kalshi Trading API}(https://trading-api.readme.io/reference/getting-started).
