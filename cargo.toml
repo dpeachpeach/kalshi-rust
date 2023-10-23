@@ -1,0 +1,2 @@
+[workspace]
+members = ["kalshi", "test_dir"]
