@@ -1,7 +1,6 @@
 use kalshi::Kalshi;
 use std::env;
 use dotenv::dotenv;
-use futures::executor::block_on;
         
 extern crate kalshi;
 

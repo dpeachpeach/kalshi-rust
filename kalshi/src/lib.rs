@@ -1,4 +1,3 @@
-const LOGOUT_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/logout";
 // imports
 use reqwest;
 use std::collections::HashMap;
@@ -12,18 +11,20 @@ pub struct Kalshi {
     member_id: Option<String>,
     client: reqwest::Client
 }
-
+// used in login method
 #[derive(Debug, Serialize, Deserialize)]
 struct LoginResponse {
     member_id: String, 
     token: String
 }
-
+// used in login method
 #[derive(Debug, Serialize, Deserialize)]
 struct LoginPayload {
     email: String, 
     password: String
 }
+
+
 
 impl Kalshi {
 
@@ -37,6 +38,7 @@ impl Kalshi {
     }
 
     pub async fn login(&mut self, user: &str, password: &str) -> Result<(), reqwest::Error> {
+
         const LOGIN_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/login";
 
         let login_payload = LoginPayload {
@@ -51,17 +53,30 @@ impl Kalshi {
                                         .await?
                                         .json()
                                         .await?;
-        
-        self.curr_token = Some(result.token);
+
+        self.curr_token = Some(format!("Bearer {}", result.token));
         self.member_id = Some(result.member_id);
         self.logged_in = true;
 
         return Ok(())
     }
 
-    pub async fn logout(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn logout(&self) -> Result<(), reqwest::Error> {
         const LOGOUT_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/logout";
-        return Ok(()) 
+
+        self.client
+                .post(LOGOUT_URL)
+                .header("Authorization", self.curr_token.clone().unwrap())
+                .header("content-type", "application/json".to_string())
+                .send()
+                .await?;
+
+        return Ok(())
+    }
+
+    pub async fn get_balance(&self) -> Result<(), reqwest::Error> {
+        
+        return Ok(())
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -74,6 +89,7 @@ impl Kalshi {
 }
 
 
+
 // Enums
 pub enum ConnectionError {
     ClientConnectionFailure,
@@ -84,7 +100,6 @@ pub enum ConnectionError {
 // Tests
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn it_works() {
