@@ -21,11 +21,11 @@ As of now this project is a **Work in Progress**, this means the feature list is
 |------------------------|---------------------------------------|-------------|
 | **Auth/Login**          | Retreiving your user token       |  ✅         |
 | **Auth/Logout**         | Deleting your user token        |    ✅     |
-| **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   ❌   |
-| **Exchange/GetExchangeAnnouncements**          | Retreive Exchange-wide Announcements    |   ❌         |
-| **Portfolio/GetBalance** | Get User Balance | 🟡      |
-| **Portfolio/GetFills** | Get All of User Fill's|❌          |
-| **Portfolio/GetOrders** | Get All of User's orders |❌          |
+| **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   🟡    |
+| **Exchange/GetExchangeAnnouncements**          | Retreive Exchange-wide Announcements    |   🟡         |
+| **Portfolio/GetBalance** | Get User Balance |     ✅  |
+| **Portfolio/GetFills** | Get All of User Fill's| 🟡       |
+| **Portfolio/GetOrders** | Get All of User's orders | 🟡       |
 | **Portfolio/CreateOrder** | Submit an Order |❌          |
 | **Portfolio/BatchCreateOrders** | Submit multiple Orders |❌          |
 | **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
