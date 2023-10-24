@@ -1,6 +1,5 @@
 // imports
 use reqwest;
-use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 
 // Main Implementation, plan to abstract out in the future
@@ -24,7 +23,10 @@ struct LoginPayload {
     password: String
 }
 
-
+#[derive(Debug, Serialize, Deserialize)]
+struct BalanceResponse {
+    balance: i64 
+}
 
 impl Kalshi {
 
@@ -74,9 +76,21 @@ impl Kalshi {
         return Ok(())
     }
 
-    pub async fn get_balance(&self) -> Result<(), reqwest::Error> {
+    pub async fn get_balance(&self) -> Result<i64, reqwest::Error> {
+
+        let BALANCE_URL = "https://trading-api.kalshi.com/trade-api/v2/portfolio/balance";
+
+        let result:BalanceResponse = self.client
+                .get(BALANCE_URL)
+                .header("Authorization", self.curr_token.clone().unwrap())
+                .send()
+                .await?
+                .json()
+                .await?;
+
+        let bal = result.balance;
         
-        return Ok(())
+        return Ok(bal)
     }
 
     pub fn get_user_token(&self) -> Option<String> {

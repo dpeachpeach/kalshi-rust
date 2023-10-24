@@ -1,3 +1,4 @@
+use futures::TryFutureExt;
 use kalshi::Kalshi;
 use std::env;
 use dotenv::dotenv;
@@ -25,4 +26,6 @@ async fn main() {
     kalshi_instance.login(&username, &password).await;
     let token = kalshi_instance.get_user_token().unwrap();
     println!("{}",token);
+    let balance = kalshi_instance.get_balance().await.unwrap();
+    println!("{}", balance);
 }
