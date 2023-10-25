@@ -10,8 +10,18 @@ enum APIType {
 }
 fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut String) -> () {
     match setting {
+
         APIType::Live => {
+            if let Ok(key) = env::var("LIVE_PASSWORD") {
+                println!("got password");
+                *pass = key;
+            }
+            if let Ok(user) = env::var("LIVE_USER_NAME") {
+                println!("got user");
+                *username = user;
+            }
         },
+
         APIType::Demo => {
             if let Ok(key) = env::var("DEMO_PASSWORD") {
                 println!("got password");
@@ -22,6 +32,7 @@ fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut Stri
                 *username = user;
             }
         }
+
     }
 }
 #[tokio::main]
