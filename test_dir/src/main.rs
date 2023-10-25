@@ -6,11 +6,10 @@ extern crate kalshi;
 
 enum APIType {
     Live,
-    Demo
+    Demo,
 }
 fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut String) -> () {
     match setting {
-
         APIType::Live => {
             if let Ok(key) = env::var("LIVE_PASSWORD") {
                 println!("got password");
@@ -20,7 +19,7 @@ fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut Stri
                 println!("got user");
                 *username = user;
             }
-        },
+        }
 
         APIType::Demo => {
             if let Ok(key) = env::var("DEMO_PASSWORD") {
@@ -32,7 +31,6 @@ fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut Stri
                 *username = user;
             }
         }
-
     }
 }
 #[tokio::main]
