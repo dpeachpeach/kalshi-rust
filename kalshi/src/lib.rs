@@ -59,8 +59,6 @@ impl<'a> Kalshi<'a> {
     }
 
     pub async fn logout(&self) -> Result<(), reqwest::Error> {
-        //const LOGOUT_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/logout";
-
         let logout_url: &str = &format!("{}/logout", self.base_url.to_string());
 
         self.client
@@ -74,8 +72,6 @@ impl<'a> Kalshi<'a> {
     }
 
     pub async fn get_balance(&self) -> Result<i64, reqwest::Error> {
-        //const BALANCE_URL: &str = "https://trading-api.kalshi.com/trade-api/v2/portfolio/balance";
-
         let balance_url: &str = &format!("{}/portfolio/balance", self.base_url.to_string());
 
         let result: BalanceResponse = self
@@ -107,15 +103,17 @@ impl<'a> Kalshi<'a> {
     }
 
     pub async fn get_exchange_schedule(&self) -> Result<ExchangeSchedule, reqwest::Error> {
-        let exchange_schedule_url: &str = &format!("{}/exchange/schedule", self.base_url.to_string());
+        let exchange_schedule_url: &str =
+            &format!("{}/exchange/schedule", self.base_url.to_string());
 
-        let result: ExchangeSchedule = self.client 
+        let result: ExchangeSchedule = self
+            .client
             .get(exchange_schedule_url)
             .send()
             .await?
             .json()
             .await?;
-        return Ok(result)
+        return Ok(result);
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -124,10 +122,14 @@ impl<'a> Kalshi<'a> {
             _ => return None,
         }
     }
-
 }
 
-// structs
+// STRUCTS
+// -----------------------------------------------
+
+// PRIVATE STRUCTS INTENDED FOR INTERNAL USE ONLY
+// -----------------------------------------------
+
 // used in login method
 #[derive(Debug, Serialize, Deserialize)]
 struct LoginResponse {
@@ -146,6 +148,9 @@ struct BalanceResponse {
     balance: i64,
 }
 
+// PUBLIC STRUCTS AVAILABLE TO USER
+// -----------------------------------------------
+
 // used in get_exchange_status
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExchangeStatus {
@@ -160,6 +165,7 @@ pub struct DaySchedule {
     close_time: String,
 }
 
+// used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct StandardHours {
     monday: DaySchedule,
@@ -171,29 +177,27 @@ pub struct StandardHours {
     sunday: DaySchedule,
 }
 
+// used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExchangeScheduleStandard {
     standard_hours: StandardHours,
-    maintenance_windows: Vec<String>, 
+    maintenance_windows: Vec<String>,
 }
 
+// used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExchangeSchedule {
-    schedule: ExchangeScheduleStandard
+    schedule: ExchangeScheduleStandard,
 }
 
-// Enums
+// ENUMS (Custom Errors Planned) 
+// -----------------------------------------------
 pub enum TradingEnvironment {
     DemoMode,
     LiveMarketMode,
 }
 
-// legacy code for now
-pub enum ConnectionError {
-    ClientConnectionFailure,
-    IncorrectCredentials,
-    ServerConnectionFailure,
-}
+
 
 // unit tests, absent at the moment. all test logic is handled in the test bot dir
 #[cfg(test)]
