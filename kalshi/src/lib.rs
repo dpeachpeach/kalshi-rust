@@ -25,7 +25,7 @@ impl<'a> Kalshi<'a> {
         };
     }
 
-    pub fn build_base_url(&mut self, trading_env: TradingEnvironment) -> (){
+    pub fn build_base_url(&mut self, trading_env: TradingEnvironment) -> () {
         match trading_env {
             TradingEnvironment::LiveMarketMode => {
                 self.base_url = "https://trading-api.kalshi.com/trade-api/v2";
@@ -118,13 +118,40 @@ impl<'a> Kalshi<'a> {
         return Ok(result);
     }
 
+    // WIP NOT FINISHED YET
     pub async fn get_user_fills(&self) -> Result<UserFills, reqwest::Error> {
-        // TODO: Take care of get_user_fill function
-        todo!()
+        let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
+
+        let result:UserFills = self.client
+            .get(user_fills_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result);
+
     }
 
+    // WIP NOT FINISHED YET
     pub async fn get_user_orders(&self) -> Result<UserOrders, reqwest::Error> {
-        // TODO: Take care of get_user_order function
+        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+
+        let result:UserOrders = self.client
+            .get(user_orders_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result);
+    }
+
+    pub async fn get_user_order(&self) -> Result<Order, reqwest::Error> {
+        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string()); 
+
         todo!()
     }
 
@@ -135,7 +162,6 @@ impl<'a> Kalshi<'a> {
         }
     }
 }
-
 
 // STRUCTS
 // -----------------------------------------------
@@ -206,25 +232,66 @@ pub struct ExchangeSchedule {
 // used in get_user_fills
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserFills {
-    // TODO: Take care of get_user_fill function
-    todo: String 
+    fills: Vec<Trade>
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Trade {
+    trade_id: String,
+    ticker: String,
+    order_id: String,
+    side: String,
+    action: String,
+    count: i32,
+    yes_price: i32,
+    no_price: i32,
+    is_taker: bool,
+    created_time: String,
+}
+
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserOrders {
-    // TODO: Take care of user_orders function
-    todo: String 
+    orders: Vec<Order>
 }
 
-// ENUMS (Custom Errors Planned) 
+// used in get_user_orders and get_order
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Order {
+    order_id: String,
+    user_id: String,
+    ticker: String,
+    status: String,
+    yes_price: i32,
+    no_price: i32,
+    created_time: String,
+    taker_fill_count: i32,
+    taker_fill_cost: i32,
+    place_count: i32,
+    decrease_count: i32,
+    maker_fill_count: i32,
+    fcc_cancel_count: i32,
+    close_cancel_count: i32,
+    remaining_count: i32,
+    queue_position: i32,
+    expiration_time: String,
+    taker_fees: i32,
+    action: String,
+    side: String,
+    r#type: String,
+    last_update_time: String,
+    client_order_id: String,
+    order_group_id: String,
+}
+
+// ENUMS (Custom Errors Planned)
 // -----------------------------------------------
 pub enum TradingEnvironment {
     DemoMode,
     LiveMarketMode,
 }
-
-
 
 // unit tests, absent at the moment. all test logic is handled in the test bot dir
 #[cfg(test)]
