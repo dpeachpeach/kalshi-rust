@@ -119,11 +119,11 @@ impl<'a> Kalshi<'a> {
     }
 
     // WIP NOT FINISHED YET
-    pub async fn get_user_fills(&self) -> Result<UserFills, reqwest::Error> {
+    pub async fn get_multiple_fills(&self) -> Result<Vec<Trade>, reqwest::Error> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
         // TODO: NOT FULLY FEATURED YET
 
-        let result:UserFills = self.client
+        let result:MultipleFillsResponse = self.client
             .get(user_fills_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
@@ -131,12 +131,12 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        return Ok(result);
+        return Ok(result.fills);
 
     }
 
     // WIP NOT FINISHED YET
-    pub async fn get_user_orders(&self) -> Result<Vec<Order>, reqwest::Error> {
+    pub async fn get_multiple_orders(&self) -> Result<Vec<Order>, reqwest::Error> {
         // TODO: NOT FULly FEATURED YET
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
@@ -151,7 +151,7 @@ impl<'a> Kalshi<'a> {
         return Ok(result.orders);
     }
 
-    pub async fn get_user_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
+    pub async fn get_single_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
         // TODO: Do it
         let user_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url.to_string(), order_id); 
 
@@ -241,7 +241,7 @@ pub struct ExchangeSchedule {
 
 // used in get_user_fills
 #[derive(Debug, Deserialize, Serialize)]
-pub struct UserFills {
+struct MultipleFillsResponse {
     fills: Vec<Trade>
 }
 
@@ -262,7 +262,7 @@ pub struct Trade {
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
-pub struct MultipleOrderResponse {
+struct MultipleOrderResponse {
     pub orders: Vec<Order>
 }
 
