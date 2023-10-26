@@ -12,6 +12,8 @@ pub struct Kalshi<'a> {
     client: reqwest::Client,
 }
 
+// METHODS
+// -----------------------------------------------
 impl<'a> Kalshi<'a> {
     pub fn new() -> Kalshi<'a> {
         return Kalshi {
@@ -116,6 +118,16 @@ impl<'a> Kalshi<'a> {
         return Ok(result);
     }
 
+    pub async fn get_user_fills(&self) -> Result<UserFills, reqwest::Error> {
+        // TODO: Take care of get_user_fill function
+        todo!()
+    }
+
+    pub async fn get_user_orders(&self) -> Result<UserOrders, reqwest::Error> {
+        // TODO: Take care of get_user_order function
+        todo!()
+    }
+
     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
             Some(val) => return Some(val.clone()),
@@ -123,6 +135,7 @@ impl<'a> Kalshi<'a> {
         }
     }
 }
+
 
 // STRUCTS
 // -----------------------------------------------
@@ -188,6 +201,20 @@ pub struct ExchangeScheduleStandard {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExchangeSchedule {
     schedule: ExchangeScheduleStandard,
+}
+
+// used in get_user_fills
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserFills {
+    // TODO: Take care of get_user_fill function
+    todo: String 
+}
+
+// used in get_user_orders
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserOrders {
+    // TODO: Take care of user_orders function
+    todo: String 
 }
 
 // ENUMS (Custom Errors Planned) 
