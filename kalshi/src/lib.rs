@@ -93,7 +93,17 @@ impl<'a> Kalshi<'a> {
     }
 
     pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, reqwest::Error> {
-        todo!()
+        let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url.to_string());
+
+        let result: ExchangeStatus = self.client
+            .get(exchange_status_url)
+            .header("accept", "application/json".to_string())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result)
     }
 
     /*
@@ -135,7 +145,7 @@ struct BalanceResponse {
 
 // used in get_exchange_status
 #[derive(Debug, Serialize, Deserialize)]
-struct ExchangeStatus {
+pub struct ExchangeStatus {
     trading_active: bool,
     exchange_active: bool,
 }
