@@ -121,6 +121,7 @@ impl<'a> Kalshi<'a> {
     // WIP NOT FINISHED YET
     pub async fn get_user_fills(&self) -> Result<UserFills, reqwest::Error> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
+        // TODO: NOT FULLY FEATURED YET
 
         let result:UserFills = self.client
             .get(user_fills_url)
@@ -135,10 +136,11 @@ impl<'a> Kalshi<'a> {
     }
 
     // WIP NOT FINISHED YET
-    pub async fn get_user_orders(&self) -> Result<UserOrders, reqwest::Error> {
+    pub async fn get_user_orders(&self) -> Result<Vec<Order>, reqwest::Error> {
+        // TODO: NOT FULly FEATURED YET
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
-        let result:UserOrders = self.client
+        let result:MultipleOrderResponse = self.client
             .get(user_orders_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
@@ -146,13 +148,21 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        return Ok(result);
+        return Ok(result.orders);
     }
 
-    pub async fn get_user_order(&self) -> Result<Order, reqwest::Error> {
-        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string()); 
+    pub async fn get_user_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
+        // TODO: Do it
+        let user_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url.to_string(), order_id); 
 
-        todo!()
+        let result: SingleOrderResponse = self.client.get(user_order_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result.order);
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -236,7 +246,7 @@ pub struct UserFills {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Trade {
+pub struct Trade {
     trade_id: String,
     ticker: String,
     order_id: String,
@@ -252,15 +262,15 @@ struct Trade {
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
-pub struct UserOrders {
-    orders: Vec<Order>
+pub struct MultipleOrderResponse {
+    pub orders: Vec<Order>
 }
 
 // used in get_user_orders and get_order
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Order {
-    order_id: String,
+pub struct Order {
+    pub order_id: String,
     user_id: String,
     ticker: String,
     status: String,
@@ -284,6 +294,12 @@ struct Order {
     last_update_time: String,
     client_order_id: String,
     order_group_id: String,
+}
+
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SingleOrderResponse {
+    order: Order
 }
 
 // ENUMS (Custom Errors Planned)
