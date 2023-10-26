@@ -25,7 +25,7 @@ impl<'a> Kalshi<'a> {
         };
     }
 
-    pub fn build_base_url(&mut self, trading_env: TradingEnvironment) -> () {
+    pub fn build_base_url(&mut self, trading_env: TradingEnvironment) -> (){
         match trading_env {
             TradingEnvironment::LiveMarketMode => {
                 self.base_url = "https://trading-api.kalshi.com/trade-api/v2";

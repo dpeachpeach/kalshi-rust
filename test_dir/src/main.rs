@@ -8,6 +8,7 @@ enum APIType {
     Live,
     Demo,
 }
+
 fn retreive_credentials(setting: APIType, username: &mut String, pass: &mut String) -> () {
     match setting {
         APIType::Live => {
