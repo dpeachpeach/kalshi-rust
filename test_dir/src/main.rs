@@ -50,8 +50,4 @@ async fn main() {
     println!("{}", token);
     let balance = kalshi_instance.get_balance().await.unwrap();
     println!("{}", balance);
-    let orders = kalshi_instance.get_multiple_orders().await.unwrap();
-    let first_order = &orders[0];
-    let order = kalshi_instance.get_single_order(&first_order.order_id).await.unwrap();
-    println!("{:?}", order);
 }

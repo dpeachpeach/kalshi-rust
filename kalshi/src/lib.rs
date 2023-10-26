@@ -123,7 +123,8 @@ impl<'a> Kalshi<'a> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
         // TODO: NOT FULLY FEATURED YET
 
-        let result:MultipleFillsResponse = self.client
+        let result: MultipleFillsResponse = self
+            .client
             .get(user_fills_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
@@ -132,7 +133,6 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         return Ok(result.fills);
-
     }
 
     // WIP NOT FINISHED YET
@@ -140,7 +140,8 @@ impl<'a> Kalshi<'a> {
         // TODO: NOT FULly FEATURED YET
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
-        let result:MultipleOrderResponse = self.client
+        let result: MultipleOrderResponse = self
+            .client
             .get(user_orders_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
@@ -152,10 +153,15 @@ impl<'a> Kalshi<'a> {
     }
 
     pub async fn get_single_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
-        // TODO: Do it
-        let user_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url.to_string(), order_id); 
+        let user_order_url: &str = &format!(
+            "{}/portfolio/orders/{}",
+            self.base_url.to_string(),
+            order_id
+        );
 
-        let result: SingleOrderResponse = self.client.get(user_order_url)
+        let result: SingleOrderResponse = self
+            .client
+            .get(user_order_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
             .await?
@@ -163,6 +169,20 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         return Ok(result.order);
+    }
+
+    pub async fn get_single_event(
+        &self,
+        event_ticker: &String,
+        with_nested_markets: Option<bool>,
+    ) -> Result<Event, reqwest::Error> {
+        todo!()
+    }
+
+
+    pub async fn get_single_market(&self, ticker: &str) -> Result<Market, reqwest::Error> {
+        
+        todo!()
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -195,6 +215,28 @@ struct LoginPayload {
 #[derive(Debug, Serialize, Deserialize)]
 struct BalanceResponse {
     balance: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SingleOrderResponse {
+    order: Order,
+}
+
+// used in get_user_fills
+#[derive(Debug, Deserialize, Serialize)]
+struct MultipleFillsResponse {
+    fills: Vec<Trade>,
+}
+
+// used in get_user_orders
+#[derive(Debug, Deserialize, Serialize)]
+struct MultipleOrderResponse {
+    orders: Vec<Order>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SingleEventResponse {
+    event: Event,
 }
 
 // PUBLIC STRUCTS AVAILABLE TO USER
@@ -239,12 +281,7 @@ pub struct ExchangeSchedule {
     schedule: ExchangeScheduleStandard,
 }
 
-// used in get_user_fills
-#[derive(Debug, Deserialize, Serialize)]
-struct MultipleFillsResponse {
-    fills: Vec<Trade>
-}
-
+// used in get_user_fills and get_fill
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Trade {
     trade_id: String,
@@ -257,13 +294,6 @@ pub struct Trade {
     no_price: i32,
     is_taker: bool,
     created_time: String,
-}
-
-
-// used in get_user_orders
-#[derive(Debug, Deserialize, Serialize)]
-struct MultipleOrderResponse {
-    pub orders: Vec<Order>
 }
 
 // used in get_user_orders and get_order
@@ -296,11 +326,60 @@ pub struct Order {
     order_group_id: String,
 }
 
-
+// used in get_event and get_events methods
 #[derive(Debug, Deserialize, Serialize)]
-struct SingleOrderResponse {
-    order: Order
+
+pub struct Event {
+    event_ticker: String,
+    series_ticker: String,
+    sub_title: String,
+    title: String,
+    mutually_exclusive: bool,
+    category: String,
+    markets: Option<Vec<Market>>,
 }
+
+// used in get_market and get_markets and get_events method
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Market {
+    ticker: String,
+    event_ticker: String,
+    market_type: String,
+    title: String,
+    subtitle: String,
+    yes_sub_title: String,
+    no_sub_title: String,
+    open_time: String,
+    close_time: String,
+    expiration_time: String,
+    latest_expiration_time: String,
+    settlement_timer_seconds: u32,
+    status: String,
+    response_price_units: String,
+    notional_value: u32,
+    tick_size: u32,
+    yes_bid: u32,
+    yes_ask: u32,
+    no_bid: u32,
+    no_ask: u32,
+    last_price: u32,
+    previous_yes_bid: u32,
+    previous_yes_ask: u32,
+    previous_price: u32,
+    volume: u32,
+    volume_24h: u32,
+    liquidity: u32,
+    open_interest: u32,
+    result: String,
+    settlement_value: u32,
+    can_close_early: bool,
+    expiration_value: String,
+    category: String,
+    risk_limit_cents: u32,
+    rules_primary: String,
+    rules_secondary: String,
+}
+
 
 // ENUMS (Custom Errors Planned)
 // -----------------------------------------------
