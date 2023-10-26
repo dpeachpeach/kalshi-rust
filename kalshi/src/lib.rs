@@ -95,22 +95,28 @@ impl<'a> Kalshi<'a> {
     pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, reqwest::Error> {
         let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url.to_string());
 
-        let result: ExchangeStatus = self.client
+        let result: ExchangeStatus = self
+            .client
             .get(exchange_status_url)
-            .header("accept", "application/json".to_string())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok(result)
+        return Ok(result);
     }
 
-    /*
     pub async fn get_exchange_schedule(&self) -> Result<ExchangeSchedule, reqwest::Error> {
-        todo!()
+        let exchange_schedule_url: &str = &format!("{}/exchange/schedule", self.base_url.to_string());
+
+        let result: ExchangeSchedule = self.client 
+            .get(exchange_schedule_url)
+            .send()
+            .await?
+            .json()
+            .await?;
+        return Ok(result)
     }
-    */
 
     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
@@ -119,9 +125,6 @@ impl<'a> Kalshi<'a> {
         }
     }
 
-    fn build_url(&self, endpoint: &str) -> String {
-        todo!()
-    }
 }
 
 // structs
@@ -151,7 +154,33 @@ pub struct ExchangeStatus {
 }
 
 // used in get_exchange_schedule
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DaySchedule {
+    open_time: String,
+    close_time: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct StandardHours {
+    monday: DaySchedule,
+    tuesday: DaySchedule,
+    wednesday: DaySchedule,
+    thursday: DaySchedule,
+    friday: DaySchedule,
+    saturday: DaySchedule,
+    sunday: DaySchedule,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ExchangeScheduleStandard {
+    standard_hours: StandardHours,
+    maintenance_windows: Vec<String>, 
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ExchangeSchedule {
+    schedule: ExchangeScheduleStandard
+}
 
 // Enums
 pub enum TradingEnvironment {

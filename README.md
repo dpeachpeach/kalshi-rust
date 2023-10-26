@@ -21,7 +21,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 |------------------------|---------------------------------------|-------------|
 | **Auth/Login**          | Retreiving your user token       |  ✅         |
 | **Auth/Logout**         | Deleting your user token        |    ✅     |
-| **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   🟡    |
+| **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   ✅    |
 | **Exchange/GetExchangeStatus**          | Retreive Exchange Status   |   ✅        |
 | **Portfolio/GetBalance** | Get User Balance |     ✅  |
 | **Portfolio/GetFills** | Get All of User Fill's| 🟡       |

@@ -49,5 +49,6 @@ async fn main() {
     println!("{}", token);
     let balance = kalshi_instance.get_balance().await.unwrap();
     println!("{}", balance);
+    println!("{:?}", kalshi_instance.get_exchange_schedule().await.unwrap());
     
 }
