@@ -22,7 +22,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Auth/Login**          | Retreiving your user token       |  ✅         |
 | **Auth/Logout**         | Deleting your user token        |    ✅     |
 | **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   🟡    |
-| **Exchange/GetExchangeAnnouncements**          | Retreive Exchange-wide Announcements    |   🟡         |
+| **Exchange/GetExchangeStatus**          | Retreive Exchange Status   |   ✅        |
 | **Portfolio/GetBalance** | Get User Balance |     ✅  |
 | **Portfolio/GetFills** | Get All of User Fill's| 🟡       |
 | **Portfolio/GetOrders** | Get All of User's orders | 🟡       |
@@ -35,12 +35,12 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Portfolio/GetPositions** | Get Positions (Get all the positions of logged in user) |❌          |
 | **Portfolio/GetPortfolioSettlements** | Get Portfolio Settlements (Get settlement history) |❌          |
 | **Market/GetEvents** | Get data about all events |❌          |
-| **Market/GetEvent** | Get data about a single event |❌          |
+| **Market/GetEvent** | Get data about a single event |🟡         |
 | **Market/GetMarkets** | Get data about all markets |❌          |
 | **Market/GetTrades** | Get data about all trades |❌          |
-| **Market/GetMarket** | Get data about a single market |❌          |
+| **Market/GetMarket** | Get data about a single market |🟡          |
 | **Market/GetMarketHistory** | Get data about a single market's historical data |❌          |
-| **Market/GetMarketOrderBook** | Get a market's order book |❌          |
+| **Market/GetMarketOrderBook** | Get a market's order book |🟡         |
 | **Market/GetSeries** | Get data about a series |❌          |
 
 
