@@ -50,4 +50,7 @@ async fn main() {
     println!("{}", token);
     let balance = kalshi_instance.get_balance().await.unwrap();
     println!("{}", balance);
+    let event_ticker = String::from("AMAZONFTC-29DEC31");
+    let my_event = kalshi_instance.get_single_event(&event_ticker, Some(true)).await.unwrap();
+    println!("{:?}", my_event);
 }

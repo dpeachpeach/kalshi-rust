@@ -12,6 +12,14 @@ pub struct Kalshi<'a> {
     client: reqwest::Client,
 }
 
+// HELPER FUNCTIONS
+fn bool_to_str(value: bool) -> &'static str {
+    match value {
+        true => "true",
+        false => "false"
+    }
+}
+
 // METHODS
 // -----------------------------------------------
 impl<'a> Kalshi<'a> {
@@ -176,13 +184,46 @@ impl<'a> Kalshi<'a> {
         event_ticker: &String,
         with_nested_markets: Option<bool>,
     ) -> Result<Event, reqwest::Error> {
-        todo!()
+        let single_event_url: &str = &format!(
+            "{}/events/{}",
+            self.base_url.to_string(),
+            event_ticker
+        );
+
+        let mut params: Vec<(&str, &str)> = Vec::new();
+
+        if let Some(with_nested_markets) = with_nested_markets{
+            params.push(("with_nested_markets", bool_to_str(with_nested_markets)));
+        }
+
+        let single_event_url = reqwest::Url::parse_with_params(single_event_url, &params).unwrap();
+
+        let result:SingleEventResponse = self.client.get(single_event_url)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result.event);
     }
 
 
-    pub async fn get_single_market(&self, ticker: &str) -> Result<Market, reqwest::Error> {
+    pub async fn get_single_market(&self, ticker: &String) -> Result<Market, reqwest::Error> {
+        let single_market_url: &str = &format!(
+            "{}/markets/{}",
+            self.base_url.to_string(),
+            ticker 
+        );
+
+        let result: SingleMarketResponse = self 
+            .client
+            .get(single_market_url)
+            .send()
+            .await?
+            .json()
+            .await?;
         
-        todo!()
+        return Ok(result.market)
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -191,6 +232,7 @@ impl<'a> Kalshi<'a> {
             _ => return None,
         }
     }
+
 }
 
 // STRUCTS
@@ -234,9 +276,17 @@ struct MultipleOrderResponse {
     orders: Vec<Order>,
 }
 
+// used in get_single_event
 #[derive(Debug, Deserialize, Serialize)]
 struct SingleEventResponse {
     event: Event,
+    markets: Option<Vec<Market>>,
+}
+
+// used in get_single_market
+#[derive(Debug, Deserialize, Serialize)]
+struct SingleMarketResponse {
+    market: Market,
 }
 
 // PUBLIC STRUCTS AVAILABLE TO USER
@@ -342,42 +392,44 @@ pub struct Event {
 // used in get_market and get_markets and get_events method
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Market {
-    ticker: String,
-    event_ticker: String,
-    market_type: String,
-    title: String,
-    subtitle: String,
-    yes_sub_title: String,
-    no_sub_title: String,
-    open_time: String,
-    close_time: String,
-    expiration_time: String,
-    latest_expiration_time: String,
-    settlement_timer_seconds: u32,
-    status: String,
-    response_price_units: String,
-    notional_value: u32,
-    tick_size: u32,
-    yes_bid: u32,
-    yes_ask: u32,
-    no_bid: u32,
-    no_ask: u32,
-    last_price: u32,
-    previous_yes_bid: u32,
-    previous_yes_ask: u32,
-    previous_price: u32,
-    volume: u32,
-    volume_24h: u32,
-    liquidity: u32,
-    open_interest: u32,
-    result: String,
-    settlement_value: u32,
-    can_close_early: bool,
-    expiration_value: String,
-    category: String,
-    risk_limit_cents: u32,
-    rules_primary: String,
-    rules_secondary: String,
+    pub ticker: String,
+    pub event_ticker: String,
+    pub market_type: String,
+    pub title: String,
+    pub subtitle: String,
+    pub yes_sub_title: String,
+    pub no_sub_title: String,
+    pub open_time: String,
+    pub close_time: String,
+    pub expected_expiration_time: String,
+    pub expiration_time: String,
+    pub latest_expiration_time: String,
+    pub settlement_timer_seconds: i64,
+    pub status: String,
+    pub response_price_units: String,
+    pub notional_value: i64,
+    pub tick_size: i64,
+    pub yes_bid: i64,
+    pub yes_ask: i64,
+    pub no_bid: i64,
+    pub no_ask: i64,
+    pub last_price: i64,
+    pub previous_yes_bid: i64,
+    pub previous_yes_ask: i64,
+    pub previous_price: i64,
+    pub volume: i64,
+    pub volume_24h: i64,
+    pub liquidity: i64,
+    pub open_interest: i64,
+    pub result: String,
+    pub can_close_early: bool,
+    pub expiration_value: String,
+    pub category: String,
+    pub risk_limit_cents: i64,
+    pub strike_type: Option<String>,
+    pub floor_strike: Option<i64>,
+    pub rules_primary: String,
+    pub rules_secondary: String,
 }
 
 
