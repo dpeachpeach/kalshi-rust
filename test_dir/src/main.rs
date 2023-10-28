@@ -52,8 +52,10 @@ async fn main() {
     println!("{}", balance);
     let my_ticker = String::from("NASDAQ100Y-24DEC31-T18499.99");
     //let my_events = kalshi_instance.get_multiple_events(Some(1), Some("CgYIgLDxhgcSEUFNQVpPTkZUQy0yOURFQzMx".to_string()), None, None, None).await.unwrap();
-    let my_orders = kalshi_instance.get_multiple_orders(None, None, None, None, None, Some(1), None).await.unwrap();
-    println!("{:?}", my_orders);
+    //let my_orders = kalshi_instance.get_multiple_orders(None, None, None, None, None, Some(1), None).await.unwrap();
+    let my_settlements = kalshi_instance.get_portfolio_settlements(None, None).await.unwrap();
+    println!("{:?}", my_settlements);
+    //println!("{:?}", my_events);
 
 
 }

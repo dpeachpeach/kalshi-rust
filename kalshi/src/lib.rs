@@ -1,5 +1,5 @@
 // imports
-use reqwest;
+use reqwest::{self, Request};
 use serde::{Deserialize, Serialize};
 
 // Main Implementation, plan to abstract out in the future
@@ -123,15 +123,14 @@ impl<'a> Kalshi<'a> {
         return Ok(result.schedule);
     }
 
-    // WIP NOT FINISHED YET
     pub async fn get_multiple_fills(
         &self,
-        ticker: Option<String>, 
-        order_id: Option<String>, 
+        ticker: Option<String>,
+        order_id: Option<String>,
         min_ts: Option<i64>,
         max_ts: Option<i64>,
         limit: Option<i32>,
-        cursor: Option<String>
+        cursor: Option<String>,
     ) -> Result<(Option<String>, Vec<Fill>), reqwest::Error> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
 
@@ -143,13 +142,13 @@ impl<'a> Kalshi<'a> {
         add_param!(params, "min_ts", min_ts);
         add_param!(params, "max_ts", max_ts);
         add_param!(params, "order_id", order_id);
-        
-        let user_fills_url =
-            reqwest::Url::parse_with_params(user_fills_url, &params).unwrap_or_else(|err| {
+
+        let user_fills_url = reqwest::Url::parse_with_params(user_fills_url, &params)
+            .unwrap_or_else(|err| {
                 eprintln!("{:?}", err);
                 panic!("Internal Parse Error, please contact developer!");
             });
-        
+
         let result: MultipleFillsResponse = self
             .client
             .get(user_fills_url)
@@ -158,19 +157,19 @@ impl<'a> Kalshi<'a> {
             .await?
             .json()
             .await?;
-            
+
         return Ok((result.cursor, result.fills));
     }
 
     pub async fn get_multiple_orders(
         &self,
-        ticker: Option<String>, 
-        event_ticker: Option<String>, 
+        ticker: Option<String>,
+        event_ticker: Option<String>,
         min_ts: Option<i64>,
         max_ts: Option<i64>,
         status: Option<String>,
         limit: Option<i32>,
-        cursor: Option<String>
+        cursor: Option<String>,
     ) -> Result<(Option<String>, Vec<Order>), reqwest::Error> {
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
@@ -184,8 +183,8 @@ impl<'a> Kalshi<'a> {
         add_param!(params, "event_ticker", event_ticker);
         add_param!(params, "status", status);
 
-        let user_orders_url =
-            reqwest::Url::parse_with_params(user_orders_url, &params).unwrap_or_else(|err| {
+        let user_orders_url = reqwest::Url::parse_with_params(user_orders_url, &params)
+            .unwrap_or_else(|err| {
                 eprintln!("{:?}", err);
                 panic!("Internal Parse Error, please contact developer!");
             });
@@ -435,16 +434,40 @@ impl<'a> Kalshi<'a> {
                 panic!("Internal Parse Error, please contact developer!");
             });
 
-        let result: PublicEventsResponse = self
+        let result: PublicEventsResponse = self.client.get(events_url).send().await?.json().await?;
+
+        return Ok((result.cursor, result.events));
+    }
+
+    pub async fn get_portfolio_settlements(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+    ) -> Result<(Option<String>, Vec<Settlement>), reqwest::Error> {
+        let settlements_url: &str = &format!("{}/portfolio/settlements", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+
+        let settlements_url = reqwest::Url::parse_with_params(settlements_url, &params)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PortfolioSettlementResponse = self
             .client
-            .get(events_url)
+            .get(settlements_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok((result.cursor, result.events))
+        Ok((result.cursor, result.settlements))
+
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -488,14 +511,14 @@ struct SingleOrderResponse {
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleFillsResponse {
     fills: Vec<Fill>,
-    cursor: Option<String>
+    cursor: Option<String>,
 }
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleOrderResponse {
     orders: Vec<Order>,
-    cursor: Option<String>
+    cursor: Option<String>,
 }
 
 // used in get_single_event
@@ -550,6 +573,12 @@ struct PublicMarketsResponse {
 struct PublicEventsResponse {
     cursor: Option<String>,
     events: Vec<Event>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct PortfolioSettlementResponse {
+    cursor: Option<String>,
+    settlements: Vec<Settlement>,
 }
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
@@ -740,6 +769,17 @@ pub struct Snapshot {
     pub ts: i64,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Settlement {
+    pub market_result: String,
+    pub no_count: i64,
+    pub no_total_cost: i64,
+    pub revenue: i64,
+    pub settled_time: String,
+    pub ticker: String,
+    pub yes_count: i64,
+    pub yes_total_cost: i64,
+}
 // ENUMS (Custom Errors Planned)
 // -----------------------------------------------
 pub enum TradingEnvironment {
