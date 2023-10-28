@@ -505,6 +505,12 @@ impl<'a> Kalshi<'a> {
         Ok((result.cursor, result.event_positions, result.market_positions))
     }
 
+    pub async fn create_order(
+        &self, 
+    ) -> () {
+        todo!()
+    }
+
     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
             Some(val) => return Some(val.clone()),
@@ -621,6 +627,21 @@ struct GetPositionsResponse {
     cursor: Option<String>,
     event_positions: Vec<EventPosition>,
     market_positions: Vec<MarketPosition>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct CreateOrderPayload {
+    action: String,
+    client_order_id: String,  
+    count: i32, 
+    side: String, 
+    ticker: String, 
+    r#type: String, 
+    buy_max_cost: Option<i64>, 
+    expiration_ts: Option<i64>, 
+    no_price: Option<i64>,
+    sell_position_floor: Option<i32>,
+    yes_price: Option<i32>
 }
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
