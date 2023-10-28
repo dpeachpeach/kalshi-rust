@@ -33,8 +33,8 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Portfolio/GetOrder** | Get a single Order | ✅          |
 | **Portfolio/CancelOrder** | Cancel an order |❌          |
 | **Portfolio/DecreaseOrder** | Decrease Order amount |❌          |
-| **Portfolio/GetPositions** | Get Positions (Get all the positions of logged in user) |🟡           |
-| **Portfolio/GetPortfolioSettlements** | Get Portfolio Settlements (Get settlement history) |🟡          |
+| **Portfolio/GetPositions** | Get Positions (Get all the positions of logged in user) |✅           |
+| **Portfolio/GetPortfolioSettlements** | Get Portfolio Settlements (Get settlement history) |✅         |
 | **Market/GetEvents** | Get data about all events |✅         |
 | **Market/GetEvent** | Get data about a single event |✅         |
 | **Market/GetMarkets** | Get data about all markets |✅       |

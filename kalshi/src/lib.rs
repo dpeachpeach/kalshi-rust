@@ -1,5 +1,5 @@
 // imports
-use reqwest::{self, Request};
+use reqwest;
 use serde::{Deserialize, Serialize};
 
 // Main Implementation, plan to abstract out in the future
@@ -467,7 +467,42 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         Ok((result.cursor, result.settlements))
+    }
 
+    pub async fn get_user_positions(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+        settlement_status: Option<String>,
+        ticker: Option<String>,
+        event_ticker: Option<String>,
+    ) -> Result<(Option<String>, Vec<EventPosition>, Vec<MarketPosition>), reqwest::Error> {
+        let positions_url: &str = &format!("{}/portfolio/positions", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "settlement_status", settlement_status);
+        add_param!(params, "ticker", ticker);
+        add_param!(params, "event_ticker", event_ticker);
+
+        let positions_url =
+            reqwest::Url::parse_with_params(positions_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: GetPositionsResponse = self
+            .client
+            .get(positions_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok((result.cursor, result.event_positions, result.market_positions))
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -579,6 +614,13 @@ struct PublicEventsResponse {
 struct PortfolioSettlementResponse {
     cursor: Option<String>,
     settlements: Vec<Settlement>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct GetPositionsResponse {
+    cursor: Option<String>,
+    event_positions: Vec<EventPosition>,
+    market_positions: Vec<MarketPosition>,
 }
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
@@ -780,6 +822,28 @@ pub struct Settlement {
     pub yes_count: i64,
     pub yes_total_cost: i64,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EventPosition {
+    pub event_exposure: i64,
+    pub event_ticker: String,
+    pub fees_paid: i64,
+    pub realized_pnl: i64,
+    pub resting_order_count: i32,
+    pub total_cost: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MarketPosition {
+    pub fees_paid: i64,
+    pub market_exposure: i64,
+    pub position: i32,
+    pub realized_pnl: i64,
+    pub resting_orders_count: i32,
+    pub ticker: String,
+    pub total_traded: i64,
+}
+
 // ENUMS (Custom Errors Planned)
 // -----------------------------------------------
 pub enum TradingEnvironment {
