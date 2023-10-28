@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug)]
 pub struct Kalshi<'a> {
     base_url: &'a str,
-    logged_in: bool,
     curr_token: Option<String>,
     member_id: Option<String>,
     client: reqwest::Client,
@@ -28,7 +27,6 @@ impl<'a> Kalshi<'a> {
     pub fn new() -> Kalshi<'a> {
         return Kalshi {
             base_url: "",
-            logged_in: false,
             curr_token: None,
             member_id: None,
             client: reqwest::Client::new(),
@@ -65,7 +63,6 @@ impl<'a> Kalshi<'a> {
 
         self.curr_token = Some(format!("Bearer {}", result.token));
         self.member_id = Some(result.member_id);
-        self.logged_in = true;
 
         return Ok(());
     }
@@ -95,9 +92,7 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        let bal = result.balance;
-
-        return Ok(bal);
+        return Ok(result.balance);
     }
 
     pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, reqwest::Error> {
@@ -129,10 +124,32 @@ impl<'a> Kalshi<'a> {
     }
 
     // WIP NOT FINISHED YET
-    pub async fn get_multiple_fills(&self) -> Result<Vec<Fill>, reqwest::Error> {
+    pub async fn get_multiple_fills(
+        &self,
+        ticker: Option<String>, 
+        order_id: Option<String>, 
+        min_ts: Option<i64>,
+        max_ts: Option<i64>,
+        limit: Option<i32>,
+        cursor: Option<String>
+    ) -> Result<(Option<String>, Vec<Fill>), reqwest::Error> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
-        // TODO: NOT FULLY FEATURED YET
 
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
+
+        add_param!(params, "ticker", ticker);
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_ts", min_ts);
+        add_param!(params, "max_ts", max_ts);
+        add_param!(params, "order_id", order_id);
+        
+        let user_fills_url =
+            reqwest::Url::parse_with_params(user_fills_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+        
         let result: MultipleFillsResponse = self
             .client
             .get(user_fills_url)
@@ -141,14 +158,37 @@ impl<'a> Kalshi<'a> {
             .await?
             .json()
             .await?;
-
-        return Ok(result.fills);
+            
+        return Ok((result.cursor, result.fills));
     }
 
-    // WIP NOT FINISHED YET
-    pub async fn get_multiple_orders(&self) -> Result<Vec<Order>, reqwest::Error> {
-        // TODO: NOT FULly FEATURED YET
+    pub async fn get_multiple_orders(
+        &self,
+        ticker: Option<String>, 
+        event_ticker: Option<String>, 
+        min_ts: Option<i64>,
+        max_ts: Option<i64>,
+        status: Option<String>,
+        limit: Option<i32>,
+        cursor: Option<String>
+    ) -> Result<(Option<String>, Vec<Order>), reqwest::Error> {
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
+
+        add_param!(params, "ticker", ticker);
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_ts", min_ts);
+        add_param!(params, "max_ts", max_ts);
+        add_param!(params, "event_ticker", event_ticker);
+        add_param!(params, "status", status);
+
+        let user_orders_url =
+            reqwest::Url::parse_with_params(user_orders_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
 
         let result: MultipleOrderResponse = self
             .client
@@ -159,7 +199,7 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        return Ok(result.orders);
+        return Ok((result.cursor, result.orders));
     }
 
     pub async fn get_single_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
@@ -189,7 +229,7 @@ impl<'a> Kalshi<'a> {
         let single_event_url: &str =
             &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
 
-        let mut params: Vec<(&str, String)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(2);
 
         add_param!(params, "with_nested_markets", with_nested_markets);
 
@@ -273,7 +313,7 @@ impl<'a> Kalshi<'a> {
         let market_history_url: &str =
             &format! {"{}/markets/{}/history", self.base_url.to_string(), ticker};
 
-        let mut params: Vec<(&str, String)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(5);
 
         add_param!(params, "limit", limit);
         add_param!(params, "cursor", cursor);
@@ -308,7 +348,7 @@ impl<'a> Kalshi<'a> {
     ) -> Result<(Option<String>, Vec<Trade>), reqwest::Error> {
         let trades_url: &str = &format!("{}/markets/trades", self.base_url.to_string());
 
-        let mut params: Vec<(&str, String)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
 
         add_param!(params, "limit", limit);
         add_param!(params, "cursor", cursor);
@@ -340,7 +380,7 @@ impl<'a> Kalshi<'a> {
     ) -> Result<(Option<String>, Vec<Market>), reqwest::Error> {
         let markets_url: &str = &format!("{}/markets", self.base_url.to_string());
 
-        let mut params: Vec<(&str, String)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(10);
 
         add_param!(params, "limit", limit);
         add_param!(params, "event_ticker", event_ticker);
@@ -381,7 +421,7 @@ impl<'a> Kalshi<'a> {
     ) -> Result<(Option<String>, Vec<Event>), reqwest::Error> {
         let events_url: &str = &format!("{}/events", self.base_url.to_string());
 
-        let mut params: Vec<(&str, String)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
 
         add_param!(params, "limit", limit);
         add_param!(params, "status", status);
@@ -448,12 +488,14 @@ struct SingleOrderResponse {
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleFillsResponse {
     fills: Vec<Fill>,
+    cursor: Option<String>
 }
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleOrderResponse {
     orders: Vec<Order>,
+    cursor: Option<String>
 }
 
 // used in get_single_event

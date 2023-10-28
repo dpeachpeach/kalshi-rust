@@ -25,8 +25,8 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Exchange/GetSchedule**          | Retrieve Exchange Schedule     |   ✅    |
 | **Exchange/GetExchangeStatus**          | Retreive Exchange Status   |   ✅        |
 | **Portfolio/GetBalance** | Get User Balance |     ✅  |
-| **Portfolio/GetFills** | Get User's Fills that fit certain criteria| 🟡       |
-| **Portfolio/GetOrders** | Get User's orders that fit certain criteria | 🟡       |
+| **Portfolio/GetFills** | Get User's Fills that fit certain criteria|  ✅        |
+| **Portfolio/GetOrders** | Get User's orders that fit certain criteria |  ✅       |
 | **Portfolio/CreateOrder** | Submit an Order |🟡         |
 | **Portfolio/BatchCreateOrders** | Submit multiple Orders |❌          |
 | **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
