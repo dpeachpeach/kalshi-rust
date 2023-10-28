@@ -12,6 +12,16 @@ pub struct Kalshi<'a> {
     client: reqwest::Client,
 }
 
+// MACROS
+
+macro_rules! add_param {
+    ($params:ident, $param_name:expr, $param_value:expr) => {
+        if let Some(param) = $param_value {
+            $params.push(($param_name, param.to_string()));
+        }
+    };
+}
+
 // HELPER FUNCTIONS
 fn bool_to_str(value: bool) -> &'static str {
     match value {
@@ -127,7 +137,7 @@ impl<'a> Kalshi<'a> {
     }
 
     // WIP NOT FINISHED YET
-    pub async fn get_multiple_fills(&self) -> Result<Vec<Trade>, reqwest::Error> {
+    pub async fn get_multiple_fills(&self) -> Result<Vec<Fill>, reqwest::Error> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
         // TODO: NOT FULLY FEATURED YET
 
@@ -187,11 +197,9 @@ impl<'a> Kalshi<'a> {
         let single_event_url: &str =
             &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
 
-        let mut params: Vec<(&str, &str)> = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::new();
 
-        if let Some(with_nested_markets) = with_nested_markets {
-            params.push(("with_nested_markets", bool_to_str(with_nested_markets)));
-        }
+        add_param!(params, "with_nested_markets", with_nested_markets);
 
         let single_event_url = reqwest::Url::parse_with_params(single_event_url, &params)
             .unwrap_or_else(|err| {
@@ -242,9 +250,7 @@ impl<'a> Kalshi<'a> {
 
         let mut params: Vec<(&str, String)> = Vec::new();
 
-        if let Some(depth) = depth {
-            params.push(("depth", depth.to_string()));
-        }
+        add_param!(params, "depth", depth);
 
         let orderbook_url =
             reqwest::Url::parse_with_params(orderbook_url, &params).unwrap_or_else(|err| {
@@ -277,21 +283,10 @@ impl<'a> Kalshi<'a> {
 
         let mut params: Vec<(&str, String)> = Vec::new();
 
-        if let Some(limit) = limit {
-            params.push(("limit", limit.to_string()));
-        }
-
-        if let Some(cursor) = cursor {
-            params.push(("cursor", cursor));
-        }
-
-        if let Some(min_ts) = min_ts {
-            params.push(("min_ts", min_ts.to_string()));
-        }
-
-        if let Some(max_ts) = max_ts {
-            params.push(("max_ts", max_ts.to_string()));
-        }
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_ts", min_ts);
+        add_param!(params, "max_ts", max_ts);
 
         let market_history_url = reqwest::Url::parse_with_params(market_history_url, &params)
             .unwrap_or_else(|err| {
@@ -323,25 +318,11 @@ impl<'a> Kalshi<'a> {
 
         let mut params: Vec<(&str, String)> = Vec::new();
 
-        if let Some(limit) = limit {
-            params.push(("limit", limit.to_string()));
-        }
-
-        if let Some(cursor) = cursor {
-            params.push(("cursor", cursor));
-        }
-
-        if let Some(min_ts) = min_ts {
-            params.push(("min_ts", min_ts.to_string()));
-        }
-
-        if let Some(max_ts) = max_ts {
-            params.push(("max_ts", max_ts.to_string()));
-        }
-
-        if let Some(ticker) = ticker {
-            params.push(("ticker", ticker.to_string()));
-        }
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_ts", min_ts);
+        add_param!(params, "max_ts", max_ts);
+        add_param!(params, "ticker", ticker);
 
         let trades_url =
             reqwest::Url::parse_with_params(trades_url, &params).unwrap_or_else(|err| {
@@ -352,6 +333,50 @@ impl<'a> Kalshi<'a> {
         let result: PublicTradesResponse = self.client.get(trades_url).send().await?.json().await?;
 
         Ok((result.cursor, result.trades))
+    }
+
+    pub async fn get_multiple_markets(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+        event_ticker: Option<String>,
+        series_ticker: Option<String>,
+        max_close_ts: Option<i64>,
+        min_close_ts: Option<i64>,
+        status: Option<String>,
+        tickers: Option<String>,
+    ) -> Result<(Option<String>, Vec<Market>), reqwest::Error> {
+        let markets_url: &str = &format!("{}/markets", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "event_ticker", event_ticker);
+        add_param!(params, "series_ticker", series_ticker);
+        add_param!(params, "status", status);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_close_ts", min_close_ts);
+        add_param!(params, "max_close_ts", max_close_ts);
+        add_param!(params, "tickers", tickers);
+
+        let markets_url =
+            reqwest::Url::parse_with_params(markets_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PublicMarketsResponse = self
+            .client
+            .get(markets_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        println!("{:?}", result);
+
+        Ok((result.cursor, result.markets))
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -394,7 +419,7 @@ struct SingleOrderResponse {
 // used in get_user_fills
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleFillsResponse {
-    fills: Vec<Trade>,
+    fills: Vec<Fill>,
 }
 
 // used in get_user_orders
@@ -445,6 +470,12 @@ struct PublicTradesResponse {
     trades: Vec<Trade>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct PublicMarketsResponse {
+    cursor: Option<String>,
+    markets: Vec<Market>,
+}
+
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
 
@@ -485,16 +516,26 @@ pub struct ExchangeScheduleStandard {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Trade {
     pub trade_id: String,
+    pub taker_side: String,
     pub ticker: String,
-    pub order_id: Option<String>,
-    pub side: Option<String>,
-    pub action: Option<String>,
     pub count: i32,
     pub yes_price: i32,
     pub no_price: i32,
-    pub is_taker: Option<bool>,
     pub created_time: String,
-    pub taker_side: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Fill {
+    pub action: String,
+    pub count: i32,
+    pub created_time: String,
+    pub is_taker: bool,
+    pub no_price: i64,
+    pub order_id: String,
+    pub side: String,
+    pub ticker: String,
+    pub trade_id: String,
+    pub yes_price: i64,
 }
 
 // used in get_user_orders and get_order
@@ -551,7 +592,7 @@ pub struct Market {
     pub no_sub_title: String,
     pub open_time: String,
     pub close_time: String,
-    pub expected_expiration_time: String,
+    pub expected_expiration_time: Option<String>,
     pub expiration_time: String,
     pub latest_expiration_time: String,
     pub settlement_timer_seconds: i64,
@@ -572,14 +613,17 @@ pub struct Market {
     pub liquidity: i64,
     pub open_interest: i64,
     pub result: String,
+    pub cap_strike: Option<f64>,
     pub can_close_early: bool,
     pub expiration_value: String,
     pub category: String,
     pub risk_limit_cents: i64,
     pub strike_type: Option<String>,
-    pub floor_strike: Option<i64>,
+    pub floor_strike: Option<f64>,
     pub rules_primary: String,
     pub rules_secondary: String,
+    pub settlement_value: Option<String>,
+    pub functional_strike: Option<String>,
 }
 
 // used in get_series
