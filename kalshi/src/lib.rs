@@ -16,7 +16,7 @@ pub struct Kalshi<'a> {
 fn bool_to_str(value: bool) -> &'static str {
     match value {
         true => "true",
-        false => "false"
+        false => "false",
     }
 }
 
@@ -112,18 +112,18 @@ impl<'a> Kalshi<'a> {
         return Ok(result);
     }
 
-    pub async fn get_exchange_schedule(&self) -> Result<ExchangeSchedule, reqwest::Error> {
+    pub async fn get_exchange_schedule(&self) -> Result<ExchangeScheduleStandard, reqwest::Error> {
         let exchange_schedule_url: &str =
             &format!("{}/exchange/schedule", self.base_url.to_string());
 
-        let result: ExchangeSchedule = self
+        let result: ExchangeScheduleResponse = self
             .client
             .get(exchange_schedule_url)
             .send()
             .await?
             .json()
             .await?;
-        return Ok(result);
+        return Ok(result.schedule);
     }
 
     // WIP NOT FINISHED YET
@@ -184,21 +184,24 @@ impl<'a> Kalshi<'a> {
         event_ticker: &String,
         with_nested_markets: Option<bool>,
     ) -> Result<Event, reqwest::Error> {
-        let single_event_url: &str = &format!(
-            "{}/events/{}",
-            self.base_url.to_string(),
-            event_ticker
-        );
+        let single_event_url: &str =
+            &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
 
         let mut params: Vec<(&str, &str)> = Vec::new();
 
-        if let Some(with_nested_markets) = with_nested_markets{
+        if let Some(with_nested_markets) = with_nested_markets {
             params.push(("with_nested_markets", bool_to_str(with_nested_markets)));
         }
 
-        let single_event_url = reqwest::Url::parse_with_params(single_event_url, &params).unwrap();
+        let single_event_url = reqwest::Url::parse_with_params(single_event_url, &params)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
 
-        let result:SingleEventResponse = self.client.get(single_event_url)
+        let result: SingleEventResponse = self
+            .client
+            .get(single_event_url)
             .send()
             .await?
             .json()
@@ -207,23 +210,105 @@ impl<'a> Kalshi<'a> {
         return Ok(result.event);
     }
 
-
     pub async fn get_single_market(&self, ticker: &String) -> Result<Market, reqwest::Error> {
-        let single_market_url: &str = &format!(
-            "{}/markets/{}",
-            self.base_url.to_string(),
-            ticker 
-        );
+        let single_market_url: &str = &format!("{}/markets/{}", self.base_url.to_string(), ticker);
 
-        let result: SingleMarketResponse = self 
+        let result: SingleMarketResponse = self
             .client
             .get(single_market_url)
             .send()
             .await?
             .json()
             .await?;
+
+        return Ok(result.market);
+    }
+
+    pub async fn get_series(&self, ticker: &String) -> Result<Series, reqwest::Error> {
+        let series_url: &str = &format!("{}/series/{}", self.base_url.to_string(), ticker);
+
+        let result: SeriesResponse = self.client.get(series_url).send().await?.json().await?;
+
+        return Ok(result.series);
+    }
+
+    pub async fn get_market_orderbook(
+        &self,
+        ticker: &String,
+        depth: Option<i32>,
+    ) -> Result<Orderbook, reqwest::Error> {
+        let orderbook_url: &str =
+            &format!("{}/markets/{}/orderbook", self.base_url.to_string(), ticker);
+
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        if let Some(depth) = depth {
+            params.push(("depth", depth.to_string()));
+        }
+
+        let orderbook_url =
+            reqwest::Url::parse_with_params(orderbook_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: OrderBookResponse = self
+            .client
+            .get(orderbook_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok(result.orderbook);
+    }
+
+    pub async fn get_market_history(
+        &self,
+        ticker: &String,
+        limit: Option<i32>,
+        cursor: Option<String>,
+        min_ts: Option<i64>,
+        max_ts: Option<i64>,
+    ) -> Result<(Option<String>, Vec<Snapshot>), reqwest::Error> {
+        let market_history_url: &str =
+            &format! {"{}/markets/{}/history", self.base_url.to_string(), ticker};
+
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        if let Some(limit) = limit {
+            params.push(("limit", limit.to_string()));
+        }
+
+        if let Some(cursor) = cursor {
+            params.push(("cursor", cursor));
+        }
+
+        if let Some(min_ts) = min_ts {
+            params.push(("min_ts", min_ts.to_string()));
+        }
+
+        if let Some(max_ts) = max_ts {
+            params.push(("max_ts", max_ts.to_string()));
+        }
+
+        let market_history_url = reqwest::Url::parse_with_params(market_history_url, &params)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
         
-        return Ok(result.market)
+            let result: MarketHistoryResponse = self
+            .client
+            .get(market_history_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok((result.cursor, result.history))
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -232,7 +317,6 @@ impl<'a> Kalshi<'a> {
             _ => return None,
         }
     }
-
 }
 
 // STRUCTS
@@ -289,61 +373,78 @@ struct SingleMarketResponse {
     market: Market,
 }
 
+// used in get_exchange_schedule
+#[derive(Debug, Deserialize, Serialize)]
+struct ExchangeScheduleResponse {
+    schedule: ExchangeScheduleStandard,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SeriesResponse {
+    series: Series,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct OrderBookResponse {
+    orderbook: Orderbook,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct MarketHistoryResponse {
+    cursor: Option<String>,
+    ticker: String,
+    history: Vec<Snapshot>
+}
+
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
 
 // used in get_exchange_status
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExchangeStatus {
-    trading_active: bool,
-    exchange_active: bool,
+    pub trading_active: bool,
+    pub exchange_active: bool,
 }
 
 // used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DaySchedule {
-    open_time: String,
-    close_time: String,
+    pub open_time: String,
+    pub close_time: String,
 }
 
 // used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct StandardHours {
-    monday: DaySchedule,
-    tuesday: DaySchedule,
-    wednesday: DaySchedule,
-    thursday: DaySchedule,
-    friday: DaySchedule,
-    saturday: DaySchedule,
-    sunday: DaySchedule,
+    pub monday: DaySchedule,
+    pub tuesday: DaySchedule,
+    pub wednesday: DaySchedule,
+    pub thursday: DaySchedule,
+    pub friday: DaySchedule,
+    pub saturday: DaySchedule,
+    pub sunday: DaySchedule,
 }
 
 // used in get_exchange_schedule
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExchangeScheduleStandard {
-    standard_hours: StandardHours,
-    maintenance_windows: Vec<String>,
-}
-
-// used in get_exchange_schedule
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ExchangeSchedule {
-    schedule: ExchangeScheduleStandard,
+    pub standard_hours: StandardHours,
+    pub maintenance_windows: Vec<String>,
 }
 
 // used in get_user_fills and get_fill
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Trade {
-    trade_id: String,
-    ticker: String,
-    order_id: String,
-    side: String,
-    action: String,
-    count: i32,
-    yes_price: i32,
-    no_price: i32,
-    is_taker: bool,
-    created_time: String,
+    pub trade_id: String,
+    pub ticker: String,
+    pub order_id: String,
+    pub side: String,
+    pub action: String,
+    pub count: i32,
+    pub yes_price: i32,
+    pub no_price: i32,
+    pub is_taker: bool,
+    pub created_time: String,
 }
 
 // used in get_user_orders and get_order
@@ -351,42 +452,41 @@ pub struct Trade {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Order {
     pub order_id: String,
-    user_id: String,
-    ticker: String,
-    status: String,
-    yes_price: i32,
-    no_price: i32,
-    created_time: String,
-    taker_fill_count: i32,
-    taker_fill_cost: i32,
-    place_count: i32,
-    decrease_count: i32,
-    maker_fill_count: i32,
-    fcc_cancel_count: i32,
-    close_cancel_count: i32,
-    remaining_count: i32,
-    queue_position: i32,
-    expiration_time: String,
-    taker_fees: i32,
-    action: String,
-    side: String,
-    r#type: String,
-    last_update_time: String,
-    client_order_id: String,
-    order_group_id: String,
+    pub user_id: String,
+    pub ticker: String,
+    pub status: String,
+    pub yes_price: i32,
+    pub no_price: i32,
+    pub created_time: String,
+    pub taker_fill_count: i32,
+    pub taker_fill_cost: i32,
+    pub place_count: i32,
+    pub decrease_count: i32,
+    pub maker_fill_count: i32,
+    pub fcc_cancel_count: i32,
+    pub close_cancel_count: i32,
+    pub remaining_count: i32,
+    pub queue_position: i32,
+    pub expiration_time: String,
+    pub taker_fees: i32,
+    pub action: String,
+    pub side: String,
+    pub r#type: String,
+    pub last_update_time: String,
+    pub client_order_id: String,
+    pub order_group_id: String,
 }
 
-// used in get_event and get_events methods
+// Used in get_event and get_events methods
 #[derive(Debug, Deserialize, Serialize)]
-
 pub struct Event {
-    event_ticker: String,
-    series_ticker: String,
-    sub_title: String,
-    title: String,
-    mutually_exclusive: bool,
-    category: String,
-    markets: Option<Vec<Market>>,
+    pub event_ticker: String,
+    pub series_ticker: String,
+    pub sub_title: String,
+    pub title: String,
+    pub mutually_exclusive: bool,
+    pub category: String,
+    pub markets: Option<Vec<Market>>,
 }
 
 // used in get_market and get_markets and get_events method
@@ -430,6 +530,43 @@ pub struct Market {
     pub floor_strike: Option<i64>,
     pub rules_primary: String,
     pub rules_secondary: String,
+}
+
+// used in get_series
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Series {
+    pub ticker: String,
+    pub frequency: String,
+    pub title: String,
+    pub category: String,
+    pub tags: Vec<String>,
+    pub settlement_sources: Vec<SettlementSource>,
+    pub contract_url: String,
+}
+
+// used in get_series
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SettlementSource {
+    pub url: String,
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Orderbook {
+    pub yes: Vec<Vec<i32>>,
+    pub no: Vec<Vec<i32>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Snapshot {
+    pub yes_price: i32,
+    pub yes_bid: i32,
+    pub yes_ask: i32,
+    pub no_bid: i32,
+    pub no_ask: i32,
+    pub volume: i32,
+    pub open_interest: i32,
+    pub ts: i64,
 }
 
 

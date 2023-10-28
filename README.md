@@ -40,9 +40,9 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Market/GetMarkets** | Get data about all markets |🟡        |
 | **Market/GetTrades** | Get data about all trades |❌          |
 | **Market/GetMarket** | Get data about a single market |✅          |
-| **Market/GetMarketHistory** | Get data about a single market's historical data |❌          |
-| **Market/GetMarketOrderBook** | Get a market's order book |🟡         |
-| **Market/GetSeries** | Get data about a series |❌          |
+| **Market/GetMarketHistory** | Get data about a single market's historical data |✅           |
+| **Market/GetMarketOrderBook** | Get a market's order book |✅         |
+| **Market/GetSeries** | Get data about a series |✅         |
 
 
 
