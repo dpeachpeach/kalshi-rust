@@ -1,6 +1,7 @@
 // imports
 use reqwest;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid; 
 
 // Main Implementation, plan to abstract out in the future
 #[derive(Debug)]
@@ -507,8 +508,53 @@ impl<'a> Kalshi<'a> {
 
     pub async fn create_order(
         &self, 
-    ) -> () {
-        todo!()
+        action: String, 
+        client_order_id: Option<String>, 
+        count: i32, 
+        side: String,
+        ticker: String,
+        input_type: String,
+        buy_max_cost: Option<i64>,
+        expiration_ts: Option<i64>,
+        no_price: Option<i64>,
+        sell_position_floor: Option<i32>,
+        yes_price: Option<i64>
+    ) -> Result<Order, reqwest::Error> {
+
+        let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+
+        let unwrapped_id = match client_order_id {
+            Some(id) => id,
+            _ => String::from(Uuid::new_v4())
+        };
+
+        let order_payload = CreateOrderPayload{
+            action: action,
+            client_order_id: unwrapped_id,  
+            count: count, 
+            side: side, 
+            ticker: ticker, 
+            r#type: input_type, 
+            buy_max_cost: buy_max_cost, 
+            expiration_ts: expiration_ts, 
+            no_price: no_price,
+            sell_position_floor: sell_position_floor,
+            yes_price: yes_price 
+        };
+        
+
+        let result:SingleOrderResponse = self
+            .client
+            .post(order_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("content-type", "application/json".to_string())
+            .json(&order_payload)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok(result.order)
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -641,7 +687,7 @@ struct CreateOrderPayload {
     expiration_ts: Option<i64>, 
     no_price: Option<i64>,
     sell_position_floor: Option<i32>,
-    yes_price: Option<i32>
+    yes_price: Option<i64>
 }
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
@@ -710,27 +756,27 @@ pub struct Fill {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Order {
     pub order_id: String,
-    pub user_id: String,
+    pub user_id: Option<String>,
     pub ticker: String,
     pub status: String,
     pub yes_price: i32,
     pub no_price: i32,
-    pub created_time: String,
-    pub taker_fill_count: i32,
-    pub taker_fill_cost: i32,
-    pub place_count: i32,
-    pub decrease_count: i32,
-    pub maker_fill_count: i32,
-    pub fcc_cancel_count: i32,
-    pub close_cancel_count: i32,
-    pub remaining_count: i32,
-    pub queue_position: i32,
-    pub expiration_time: String,
-    pub taker_fees: i32,
+    pub created_time: Option<String>,
+    pub taker_fill_count: Option<i32>,
+    pub taker_fill_cost: Option<i32>,
+    pub place_count: Option<i32>,
+    pub decrease_count: Option<i32>,
+    pub maker_fill_count: Option<i32>,
+    pub fcc_cancel_count: Option<i32>,
+    pub close_cancel_count: Option<i32>,
+    pub remaining_count: Option<i32>,
+    pub queue_position: Option<i32>,
+    pub expiration_time: Option<String>,
+    pub taker_fees: Option<i32>,
     pub action: String,
     pub side: String,
     pub r#type: String,
-    pub last_update_time: String,
+    pub last_update_time: Option<String>,
     pub client_order_id: String,
     pub order_group_id: String,
 }
@@ -762,7 +808,7 @@ pub struct Market {
     pub open_time: String,
     pub close_time: String,
     pub expected_expiration_time: Option<String>,
-    pub expiration_time: String,
+    pub expiration_time: Option<String>,
     pub latest_expiration_time: String,
     pub settlement_timer_seconds: i64,
     pub status: String,
