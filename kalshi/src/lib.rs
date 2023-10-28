@@ -298,8 +298,8 @@ impl<'a> Kalshi<'a> {
                 eprintln!("{:?}", err);
                 panic!("Internal Parse Error, please contact developer!");
             });
-        
-            let result: MarketHistoryResponse = self
+
+        let result: MarketHistoryResponse = self
             .client
             .get(market_history_url)
             .header("Authorization", self.curr_token.clone().unwrap())
@@ -309,6 +309,49 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         Ok((result.cursor, result.history))
+    }
+
+    pub async fn get_trades(
+        &self,
+        cursor: Option<String>,
+        limit: Option<i32>,
+        ticker: Option<String>,
+        min_ts: Option<i64>,
+        max_ts: Option<i64>,
+    ) -> Result<(Option<String>, Vec<Trade>), reqwest::Error> {
+        let trades_url: &str = &format!("{}/markets/trades", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        if let Some(limit) = limit {
+            params.push(("limit", limit.to_string()));
+        }
+
+        if let Some(cursor) = cursor {
+            params.push(("cursor", cursor));
+        }
+
+        if let Some(min_ts) = min_ts {
+            params.push(("min_ts", min_ts.to_string()));
+        }
+
+        if let Some(max_ts) = max_ts {
+            params.push(("max_ts", max_ts.to_string()));
+        }
+
+        if let Some(ticker) = ticker {
+            params.push(("ticker", ticker.to_string()));
+        }
+
+        let trades_url =
+            reqwest::Url::parse_with_params(trades_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PublicTradesResponse = self.client.get(trades_url).send().await?.json().await?;
+
+        Ok((result.cursor, result.trades))
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -393,7 +436,13 @@ struct OrderBookResponse {
 struct MarketHistoryResponse {
     cursor: Option<String>,
     ticker: String,
-    history: Vec<Snapshot>
+    history: Vec<Snapshot>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct PublicTradesResponse {
+    cursor: Option<String>,
+    trades: Vec<Trade>,
 }
 
 // PUBLIC STRUCTS AVAILABLE TO USER
@@ -437,14 +486,15 @@ pub struct ExchangeScheduleStandard {
 pub struct Trade {
     pub trade_id: String,
     pub ticker: String,
-    pub order_id: String,
-    pub side: String,
-    pub action: String,
+    pub order_id: Option<String>,
+    pub side: Option<String>,
+    pub action: Option<String>,
     pub count: i32,
     pub yes_price: i32,
     pub no_price: i32,
-    pub is_taker: bool,
+    pub is_taker: Option<bool>,
     pub created_time: String,
+    pub taker_side: Option<String>,
 }
 
 // used in get_user_orders and get_order
@@ -568,7 +618,6 @@ pub struct Snapshot {
     pub open_interest: i32,
     pub ts: i64,
 }
-
 
 // ENUMS (Custom Errors Planned)
 // -----------------------------------------------

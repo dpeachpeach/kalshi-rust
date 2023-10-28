@@ -51,6 +51,7 @@ async fn main() {
     let balance = kalshi_instance.get_balance().await.unwrap();
     println!("{}", balance);
     let my_ticker = String::from("NASDAQ100Y-24DEC31-T18499.99");
-    let history = kalshi_instance.get_market_history(&my_ticker, Some(1), Some(String::from("CgwIwJybpQYQgJ3GlwI")),None, None).await.unwrap();
-    println!("{:?}", history);
+    let trades = kalshi_instance.get_trades(None, Some(5), None, None, None).await.unwrap();
+    println!("{:?}", trades);
+
 }
