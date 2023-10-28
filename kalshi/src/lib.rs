@@ -22,14 +22,6 @@ macro_rules! add_param {
     };
 }
 
-// HELPER FUNCTIONS
-fn bool_to_str(value: bool) -> &'static str {
-    match value {
-        true => "true",
-        false => "false",
-    }
-}
-
 // METHODS
 // -----------------------------------------------
 impl<'a> Kalshi<'a> {
@@ -379,6 +371,42 @@ impl<'a> Kalshi<'a> {
         Ok((result.cursor, result.markets))
     }
 
+    pub async fn get_multiple_events(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+        status: Option<String>,
+        series_ticker: Option<String>,
+        with_nested_markets: Option<bool>,
+    ) -> Result<(Option<String>, Vec<Event>), reqwest::Error> {
+        let events_url: &str = &format!("{}/events", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "status", status);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "series_ticker", series_ticker);
+        add_param!(params, "with_nested_markets", with_nested_markets);
+
+        let events_url =
+            reqwest::Url::parse_with_params(events_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PublicEventsResponse = self
+            .client
+            .get(events_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        return Ok((result.cursor, result.events))
+    }
+
     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
             Some(val) => return Some(val.clone()),
@@ -476,6 +504,11 @@ struct PublicMarketsResponse {
     markets: Vec<Market>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct PublicEventsResponse {
+    cursor: Option<String>,
+    events: Vec<Event>,
+}
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
 
@@ -578,6 +611,8 @@ pub struct Event {
     pub mutually_exclusive: bool,
     pub category: String,
     pub markets: Option<Vec<Market>>,
+    pub strike_date: Option<String>,
+    pub strike_period: Option<String>,
 }
 
 // used in get_market and get_markets and get_events method
