@@ -27,7 +27,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Portfolio/GetBalance** | Get User Balance |     ✅  |
 | **Portfolio/GetFills** | Get User's Fills that fit certain criteria|  ✅        |
 | **Portfolio/GetOrders** | Get User's orders that fit certain criteria |  ✅       |
-| **Portfolio/CreateOrder** | Submit an Order |🟡         |
+| **Portfolio/CreateOrder** | Submit an Order |✅         |
 | **Portfolio/BatchCreateOrders** | Submit multiple Orders |❌          |
 | **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
 | **Portfolio/GetOrder** | Get a single Order | ✅          |

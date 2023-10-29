@@ -1,7 +1,7 @@
 // imports
-use reqwest;
+use reqwest::{self, Response};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid; 
+use uuid::Uuid;
 
 // Main Implementation, plan to abstract out in the future
 #[derive(Debug)]
@@ -209,6 +209,7 @@ impl<'a> Kalshi<'a> {
             order_id
         );
 
+        // SingleOrderResponse
         let result: SingleOrderResponse = self
             .client
             .get(user_order_url)
@@ -503,14 +504,18 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        Ok((result.cursor, result.event_positions, result.market_positions))
+        Ok((
+            result.cursor,
+            result.event_positions,
+            result.market_positions,
+        ))
     }
 
     pub async fn create_order(
-        &self, 
-        action: String, 
-        client_order_id: Option<String>, 
-        count: i32, 
+        &self,
+        action: String,
+        client_order_id: Option<String>,
+        count: i32,
         side: String,
         ticker: String,
         input_type: String,
@@ -518,32 +523,33 @@ impl<'a> Kalshi<'a> {
         expiration_ts: Option<i64>,
         no_price: Option<i64>,
         sell_position_floor: Option<i32>,
-        yes_price: Option<i64>
+        yes_price: Option<i64>,
     ) -> Result<Order, reqwest::Error> {
-
         let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
         let unwrapped_id = match client_order_id {
             Some(id) => id,
-            _ => String::from(Uuid::new_v4())
+            _ => String::from(Uuid::new_v4()),
         };
 
-        let order_payload = CreateOrderPayload{
+        let order_payload = CreateOrderPayload {
             action: action,
-            client_order_id: unwrapped_id,  
-            count: count, 
-            side: side, 
-            ticker: ticker, 
-            r#type: input_type, 
-            buy_max_cost: buy_max_cost, 
-            expiration_ts: expiration_ts, 
+            client_order_id: unwrapped_id,
+            count: count,
+            side: side,
+            ticker: ticker,
+            r#type: input_type,
+            buy_max_cost: buy_max_cost,
+            expiration_ts: expiration_ts,
             no_price: no_price,
             sell_position_floor: sell_position_floor,
-            yes_price: yes_price 
+            yes_price: yes_price,
         };
-        
 
-        let result:SingleOrderResponse = self
+        println!("payload_id: {}", order_payload.client_order_id);
+
+
+        let result: SingleOrderResponse = self
             .client
             .post(order_url)
             .header("Authorization", self.curr_token.clone().unwrap())
@@ -554,7 +560,28 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
+        println!("{:?}", result);
+
         Ok(result.order)
+    }
+
+    pub async fn cancel_order(&self, order_id: &String) -> Result<(Order, i32), reqwest::Error> {
+        let cancel_order_url: &str = &format!(
+            "{}/portfolio/orders/{}",
+            self.base_url.to_string(),
+            order_id
+        );
+
+        let result: DeleteOrderResponse = self
+            .client
+            .delete(cancel_order_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok((result.order, result.reduced_by))
     }
 
     pub fn get_user_token(&self) -> Option<String> {
@@ -678,16 +705,22 @@ struct GetPositionsResponse {
 #[derive(Debug, Deserialize, Serialize)]
 struct CreateOrderPayload {
     action: String,
-    client_order_id: String,  
-    count: i32, 
-    side: String, 
-    ticker: String, 
-    r#type: String, 
-    buy_max_cost: Option<i64>, 
-    expiration_ts: Option<i64>, 
+    client_order_id: String,
+    count: i32,
+    side: String,
+    ticker: String,
+    r#type: String,
+    buy_max_cost: Option<i64>,
+    expiration_ts: Option<i64>,
     no_price: Option<i64>,
     sell_position_floor: Option<i32>,
-    yes_price: Option<i64>
+    yes_price: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct DeleteOrderResponse {
+    order: Order,
+    reduced_by: i32,
 }
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
