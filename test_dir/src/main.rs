@@ -62,10 +62,10 @@ async fn main() {
     */
     //let my_positions = kalshi_instance.get_user_positions(None, None, None, None, None).await.unwrap();
     //println!("{:?}", my_events);
-    let bought_order = kalshi_instance.create_order("buy".to_string(), None, 1, "yes".to_string(), my_ticker.to_string(), "market".to_string(), None, None, None, None, None).await.unwrap();
+    let bought_order = kalshi_instance.create_order("buy".to_string(), None, 1, "yes".to_string(), my_ticker.to_string(), "limit".to_string(), None, None, None, None, Some(1)).await.unwrap();
     let curr_id = bought_order.order_id.clone();
     println!("{}", curr_id);
-    thread::sleep(Duration::from_secs(5));
-    let gotten_order = kalshi_instance.get_single_order(&curr_id).await.unwrap();
-    println!("{:?}", gotten_order);
+    //thread::sleep(Duration::from_secs(1));
+    let cancelled_order = kalshi_instance.get_single_order(&curr_id).await.unwrap();
+    println!("{:?}", cancelled_order);
 }

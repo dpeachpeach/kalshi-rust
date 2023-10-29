@@ -561,7 +561,6 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         println!("{:?}", result);
-
         Ok(result.order)
     }
 
