@@ -31,7 +31,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Portfolio/BatchCreateOrders** | Submit multiple Orders |❌          |
 | **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
 | **Portfolio/GetOrder** | Get a single Order | ✅          |
-| **Portfolio/CancelOrder** | Cancel an order |🟡         |
+| **Portfolio/CancelOrder** | Cancel an order |✅          |
 | **Portfolio/DecreaseOrder** | Decrease Order amount |🟡          |
 | **Portfolio/GetPositions** | Get Positions (Get all the positions of logged in user) |✅           |
 | **Portfolio/GetPortfolioSettlements** | Get Portfolio Settlements (Get settlement history) |✅         |
