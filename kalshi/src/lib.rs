@@ -1,3 +1,5 @@
+use std::sync::RwLock;
+
 // imports
 use reqwest::{self, Response};
 use serde::{Deserialize, Serialize};
@@ -589,6 +591,23 @@ impl<'a> Kalshi<'a> {
             _ => return None,
         }
     }
+
+    pub async fn decrease_order(
+        &self,
+        order_id: &String,
+        reduce_by: Option<i32>,
+        reduce_to: Option<i32>
+    ) -> Result<Order, reqwest::Error> {
+
+        let decrease_order_url: &str = &format!(
+            "{}/portfolio/orders/{}",
+            self.base_url.to_string(),
+            order_id
+        );
+
+
+        todo!()
+    }
 }
 
 // STRUCTS
@@ -721,6 +740,18 @@ struct DeleteOrderResponse {
     order: Order,
     reduced_by: i32,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+struct DecreaseOrderResponse {
+    order: Order
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct DecreaseOrderPayload {
+    reduce_by: Option<i32>,
+    reduce_to: Option<i32>
+}
+
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
 
@@ -948,6 +979,14 @@ pub struct MarketPosition {
 pub enum TradingEnvironment {
     DemoMode,
     LiveMarketMode,
+}
+
+// ERROR ENUMS
+// -----------------------------------------------
+
+pub enum KalshiError {
+    ReqwestError(reqwest::Error), 
+    UserInputError(String)
 }
 
 // unit tests, absent at the moment. all test logic is handled in the test bot dir
