@@ -1,7 +1,8 @@
-use std::sync::RwLock;
+use core::fmt;
+use std::error::Error;
 
 // imports
-use reqwest::{self, Response};
+use reqwest;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -550,7 +551,6 @@ impl<'a> Kalshi<'a> {
 
         println!("payload_id: {}", order_payload.client_order_id);
 
-
         let result: SingleOrderResponse = self
             .client
             .post(order_url)
@@ -566,7 +566,7 @@ impl<'a> Kalshi<'a> {
         Ok(result.order)
     }
 
-    pub async fn cancel_order(&self, order_id: &String) -> Result<(Order, i32), reqwest::Error> {
+    pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), reqwest::Error> {
         let cancel_order_url: &str = &format!(
             "{}/portfolio/orders/{}",
             self.base_url.to_string(),
@@ -594,16 +594,31 @@ impl<'a> Kalshi<'a> {
 
     pub async fn decrease_order(
         &self,
-        order_id: &String,
+        order_id: &str,
         reduce_by: Option<i32>,
-        reduce_to: Option<i32>
-    ) -> Result<Order, reqwest::Error> {
+        reduce_to: Option<i32>,
+    ) -> Result<Order, KalshiError> {
 
         let decrease_order_url: &str = &format!(
             "{}/portfolio/orders/{}",
             self.base_url.to_string(),
             order_id
         );
+
+        match (reduce_by, reduce_to) {
+            (Some(x), Some(y)) => {
+                return Err(KalshiError::UserInputError(
+                    "Can only provide reduce_by or reduce_to, can't provide both".to_string(),
+                ));
+            }
+            (None, None) => {
+                return Err(KalshiError::UserInputError(
+                    ("Must provide either reduce_by or reduce_to, can't provide neither"
+                        .to_string()),
+                ));
+            }
+            _ => {}
+        }
 
 
         todo!()
@@ -743,13 +758,13 @@ struct DeleteOrderResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct DecreaseOrderResponse {
-    order: Order
+    order: Order,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct DecreaseOrderPayload {
     reduce_by: Option<i32>,
-    reduce_to: Option<i32>
+    reduce_to: Option<i32>,
 }
 
 // PUBLIC STRUCTS AVAILABLE TO USER
@@ -974,19 +989,67 @@ pub struct MarketPosition {
     pub total_traded: i64,
 }
 
-// ENUMS (Custom Errors Planned)
+
+// CUSTOM ERROR STRUCTS + ENUMS
+// -----------------------------------------------
+
+#[derive(Debug)]
+pub enum KalshiError {
+    ReqwestError(reqwest::Error),
+    UserInputError(String),
+}
+
+impl fmt::Display for KalshiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KalshiError::ReqwestError(e) => write!(f, "HTTP Error: {}", e),
+            KalshiError::UserInputError(e) => write!(f, "User Input Error: {}", e),
+        }
+    }
+}
+
+impl Error for KalshiError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            KalshiError::ReqwestError(e) => Some(e),
+            KalshiError::UserInputError(_) => None,
+        }
+    }
+}
+
+impl From<reqwest::Error> for KalshiError {
+    fn from(error: reqwest::Error) -> Self {
+        KalshiError::ReqwestError(error)
+    }
+}
+
+// GENERAL ENUMS 
 // -----------------------------------------------
 pub enum TradingEnvironment {
     DemoMode,
     LiveMarketMode,
 }
 
-// ERROR ENUMS
-// -----------------------------------------------
+pub enum Side {
+    Yes,
+    No,
+}
 
-pub enum KalshiError {
-    ReqwestError(reqwest::Error), 
-    UserInputError(String)
+pub enum Action {
+    Buy,
+    Sell,
+}
+
+pub enum OrderType {
+    Market,
+    Limit,
+}
+
+pub enum Status {
+    Resting,
+    Cancelled,
+    Executed,
+    Pending,
 }
 
 // unit tests, absent at the moment. all test logic is handled in the test bot dir
