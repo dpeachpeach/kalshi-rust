@@ -4,17 +4,31 @@
 
 This is a wrapper for the [Kalshi](https://kalshi.com/) trading API written by and for those using Rust. 
 
-## Featurelist / Roadmap
+## Featurelist + Roadmap
 
-### WIP Statement
-As of now this project is a **Work in Progress**, this means the feature list is not complete. Anyone is welcome to try out the API as they see fit. A sample implementation is present in the *test_dir* directory for testing and I will develop a full arbitrage 'sample bot' at the conclusion of the project for anyone to edit / mess around with should they want to start using the API.
+### HTTP Requests: ✅ 
+As of now the project supports interacting with Kalshi's RESTful API **fully**.
+The only features missing from that part of the project are as follows:
+- Advanced API features (Waiting for the devs to give me access)
 
-### Project Goals
-1. Complete every function that wraps around the [Kalshi Trading API}(https://trading-api.readme.io/reference/getting-started).
-2. Custom Errors (For easy debugging by user)
-3. Work on an implementation for websockets (Stretch goal at the moment).
-4. Write detailed documentation.
-5. Write sample_bot that utilizes basic price arbitrage.
+However any user of this library can build a rust trading bot using this library 
+if they wish!
+
+Every function present in the library wraps around the [Kalshi Trading API](https://trading-api.readme.io/reference/getting-started).
+
+### Detailed Docs, More verbose errors + QOL: 🟡
+I am currently revamping the errors provided by the API to provide more support
+for the user to debug their work. I am also revamping the datatypes of the project
+to take advantage of Rust's enums to ensure that the user minimizes error-prone requests to the server. 
+
+After the project is successfully refactored and the quality of life is topped off,
+I will write detailed docs to support a user's implementation of a Kalshi bot.
+
+### Websocket wrapper: ❌    
+As of now the kalshi_api doesn't host a lot of functionality through a websocket
+connection. It doesn't even support submitting / altering orders through it.
+However a goal of mine for this project is to successfully write a websocket
+implementation for anyone using the API. 
 
 ## Feature Roadmap
 
@@ -32,7 +46,7 @@ As of now this project is a **Work in Progress**, this means the feature list is
 | **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
 | **Portfolio/GetOrder** | Get a single Order | ✅          |
 | **Portfolio/CancelOrder** | Cancel an order |✅          |
-| **Portfolio/DecreaseOrder** | Decrease Order amount |🟡          |
+| **Portfolio/DecreaseOrder** | Decrease Order amount |✅          |
 | **Portfolio/GetPositions** | Get Positions (Get all the positions of logged in user) |✅           |
 | **Portfolio/GetPortfolioSettlements** | Get Portfolio Settlements (Get settlement history) |✅         |
 | **Market/GetEvents** | Get data about all events |✅         |
