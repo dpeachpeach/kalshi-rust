@@ -26,7 +26,7 @@ I will write detailed docs to support a user's implementation of a Kalshi bot.
 
 ### Websocket wrapper: ❌    
 As of now the kalshi_api doesn't host a lot of functionality through a websocket
-connection. It doesn't even support submitting / altering orders through it.
+connection, in fact it doesn't even support submitting / altering orders through it.
 However a goal of mine for this project is to successfully write a websocket
 implementation for anyone using the API. 
 
