@@ -16,21 +16,7 @@ if they wish!
 
 Every function present in the library wraps around the [Kalshi Trading API](https://trading-api.readme.io/reference/getting-started).
 
-### Detailed Docs, More verbose errors + QOL: 🟡
-I am currently revamping the errors provided by the API to provide more support
-for the user to debug their work. I am also revamping the datatypes of the project
-to take advantage of Rust's enums to ensure that the user minimizes error-prone requests to the server. 
-
-After the project is successfully refactored and the quality of life is topped off,
-I will write detailed docs to support a user's implementation of a Kalshi bot.
-
-### Websocket wrapper: ❌    
-As of now the kalshi_api doesn't host a lot of functionality through a websocket
-connection, in fact it doesn't even support submitting / altering orders through it.
-However a goal of mine for this project is to successfully write a websocket
-implementation for anyone using the API. 
-
-## Feature Roadmap
+#### HTTP Feature Table
 
 | Feature                | Description                           | Status      |
 |------------------------|---------------------------------------|-------------|
@@ -57,6 +43,21 @@ implementation for anyone using the API.
 | **Market/GetMarketHistory** | Get data about a single market's historical data |✅           |
 | **Market/GetMarketOrderBook** | Get a market's order book |✅         |
 | **Market/GetSeries** | Get data about a series |✅         |
+
+### Detailed Docs, More verbose errors + QOL: 🟡
+I am currently revamping the errors provided by the API to provide more support
+for the user to debug their work. I am also revamping the datatypes of the project
+to take advantage of Rust's enums to ensure that the user minimizes error-prone requests to the server. 
+
+After the project is successfully refactored and the quality of life is topped off,
+I will write detailed docs to support a user's implementation of a Kalshi bot.
+
+### Websocket wrapper: ❌    
+As of now the kalshi_api doesn't host a lot of functionality through a websocket
+connection, in fact it doesn't even support submitting / altering orders through it.
+However a goal of mine for this project is to successfully write a websocket
+implementation for anyone using the API. 
+
 
 
 
