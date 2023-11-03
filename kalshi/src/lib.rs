@@ -598,7 +598,6 @@ impl<'a> Kalshi<'a> {
         reduce_by: Option<i32>,
         reduce_to: Option<i32>,
     ) -> Result<Order, KalshiError> {
-
         let decrease_order_url: &str = &format!(
             "{}/portfolio/orders/{}",
             self.base_url.to_string(),
@@ -606,7 +605,7 @@ impl<'a> Kalshi<'a> {
         );
 
         match (reduce_by, reduce_to) {
-            (Some(x), Some(y)) => {
+            (Some(_), Some(_)) => {
                 return Err(KalshiError::UserInputError(
                     "Can only provide reduce_by or reduce_to, can't provide both".to_string(),
                 ));
@@ -620,8 +619,24 @@ impl<'a> Kalshi<'a> {
             _ => {}
         }
 
+        let decrease_payload = DecreaseOrderPayload {
+            reduce_by: reduce_by,
+            reduce_to: reduce_to,
+        };
 
-        todo!()
+        let result: SingleOrderResponse = self
+            .client
+            .post(decrease_order_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("content-type", "application/json".to_string())
+            .json(&decrease_payload)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        
+        Ok(result.order)
     }
 }
 
@@ -989,20 +1004,19 @@ pub struct MarketPosition {
     pub total_traded: i64,
 }
 
-
 // CUSTOM ERROR STRUCTS + ENUMS
 // -----------------------------------------------
 
 #[derive(Debug)]
 pub enum KalshiError {
-    ReqwestError(reqwest::Error),
+    HTTPSError(HTTPSError),
     UserInputError(String),
 }
 
 impl fmt::Display for KalshiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            KalshiError::ReqwestError(e) => write!(f, "HTTP Error: {}", e),
+            KalshiError::HTTPSError(e) => write!(f, "HTTP Error: {}", e),
             KalshiError::UserInputError(e) => write!(f, "User Input Error: {}", e),
         }
     }
@@ -1011,19 +1025,45 @@ impl fmt::Display for KalshiError {
 impl Error for KalshiError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            KalshiError::ReqwestError(e) => Some(e),
+            KalshiError::HTTPSError(e) => Some(e),
             KalshiError::UserInputError(_) => None,
         }
     }
 }
 
+
 impl From<reqwest::Error> for KalshiError {
-    fn from(error: reqwest::Error) -> Self {
-        KalshiError::ReqwestError(error)
+    fn from(err: reqwest::Error) -> Self {
+        KalshiError::HTTPSError(HTTPSError::ConnectionError(err))
     }
 }
 
-// GENERAL ENUMS 
+
+#[derive(Debug)]
+pub enum HTTPSError {
+    ConnectionError(reqwest::Error),
+    SerializationError(reqwest::Error),
+}
+
+impl fmt::Display for HTTPSError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HTTPSError::ConnectionError(e) => write!(f, "HTTP Request Error: {}", e),
+            HTTPSError::SerializationError(e) => write!(f, "Serialization Error, data provided doesn't match struct: {}", e)
+        }
+    }
+}
+
+impl Error for HTTPSError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            HTTPSError::ConnectionError(e) => Some(e),
+            HTTPSError::SerializationError(e) => Some(e),
+        }
+    }
+}
+
+// GENERAL ENUMS
 // -----------------------------------------------
 pub enum TradingEnvironment {
     DemoMode,
@@ -1033,6 +1073,27 @@ pub enum TradingEnvironment {
 pub enum Side {
     Yes,
     No,
+}
+
+impl ToString for Side {
+    fn to_string(&self) -> String {
+        match self {
+            Side::Yes => "yes".to_string(),
+            Side::No => "no".to_string(),
+        }
+    }
+}
+
+impl std::str::FromStr for Side {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "yes" => Ok(Side::Yes),
+            "no" => Ok(Side::No),
+            _ => Err(()),
+        }
+    }
 }
 
 pub enum Action {
