@@ -1,13 +1,17 @@
-use core::fmt;
-use std::error::Error;
+
+#[macro_use] 
 mod utils;
+pub mod kalshi_error;
 pub mod auth;
 pub mod exchange;
+pub mod portfolio;
+pub mod market; 
 
 // imports
 use reqwest;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use kalshi_error::*;
 
 // Main Implementation, plan to abstract out in the future
 #[derive(Debug)]
@@ -17,8 +21,6 @@ pub struct Kalshi<'a> {
     member_id: Option<String>,
     client: reqwest::Client,
 }
-
-
 
 // METHODS
 // -----------------------------------------------
@@ -45,161 +47,12 @@ impl<'a> Kalshi<'a> {
 
 
 
-    pub async fn get_balance(&self) -> Result<i64, reqwest::Error> {
-        let balance_url: &str = &format!("{}/portfolio/balance", self.base_url.to_string());
 
-        let result: BalanceResponse = self
-            .client
-            .get(balance_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .send()
-            .await?
-            .json()
-            .await?;
 
-        return Ok(result.balance);
-    }
 
-    pub async fn get_multiple_fills(
-        &self,
-        ticker: Option<String>,
-        order_id: Option<String>,
-        min_ts: Option<i64>,
-        max_ts: Option<i64>,
-        limit: Option<i32>,
-        cursor: Option<String>,
-    ) -> Result<(Option<String>, Vec<Fill>), reqwest::Error> {
-        let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
 
-        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
 
-        add_param!(params, "ticker", ticker);
-        add_param!(params, "limit", limit);
-        add_param!(params, "cursor", cursor);
-        add_param!(params, "min_ts", min_ts);
-        add_param!(params, "max_ts", max_ts);
-        add_param!(params, "order_id", order_id);
-
-        let user_fills_url = reqwest::Url::parse_with_params(user_fills_url, &params)
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                panic!("Internal Parse Error, please contact developer!");
-            });
-
-        let result: MultipleFillsResponse = self
-            .client
-            .get(user_fills_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok((result.cursor, result.fills));
-    }
-
-    pub async fn get_multiple_orders(
-        &self,
-        ticker: Option<String>,
-        event_ticker: Option<String>,
-        min_ts: Option<i64>,
-        max_ts: Option<i64>,
-        status: Option<String>,
-        limit: Option<i32>,
-        cursor: Option<String>,
-    ) -> Result<(Option<String>, Vec<Order>), reqwest::Error> {
-        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
-
-        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
-
-        add_param!(params, "ticker", ticker);
-        add_param!(params, "limit", limit);
-        add_param!(params, "cursor", cursor);
-        add_param!(params, "min_ts", min_ts);
-        add_param!(params, "max_ts", max_ts);
-        add_param!(params, "event_ticker", event_ticker);
-        add_param!(params, "status", status);
-
-        let user_orders_url = reqwest::Url::parse_with_params(user_orders_url, &params)
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                panic!("Internal Parse Error, please contact developer!");
-            });
-
-        let result: MultipleOrderResponse = self
-            .client
-            .get(user_orders_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok((result.cursor, result.orders));
-    }
-
-    pub async fn get_single_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
-        let user_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
-
-        // SingleOrderResponse
-        let result: SingleOrderResponse = self
-            .client
-            .get(user_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok(result.order);
-    }
-
-    pub async fn get_single_event(
-        &self,
-        event_ticker: &String,
-        with_nested_markets: Option<bool>,
-    ) -> Result<Event, reqwest::Error> {
-        let single_event_url: &str =
-            &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
-
-        let mut params: Vec<(&str, String)> = Vec::with_capacity(2);
-
-        add_param!(params, "with_nested_markets", with_nested_markets);
-
-        let single_event_url = reqwest::Url::parse_with_params(single_event_url, &params)
-            .unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                panic!("Internal Parse Error, please contact developer!");
-            });
-
-        let result: SingleEventResponse = self
-            .client
-            .get(single_event_url)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok(result.event);
-    }
-
-    pub async fn get_single_market(&self, ticker: &String) -> Result<Market, reqwest::Error> {
-        let single_market_url: &str = &format!("{}/markets/{}", self.base_url.to_string(), ticker);
-
-        let result: SingleMarketResponse = self
-            .client
-            .get(single_market_url)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok(result.market);
-    }
+ 
 
     pub async fn get_series(&self, ticker: &String) -> Result<Series, reqwest::Error> {
         let series_url: &str = &format!("{}/series/{}", self.base_url.to_string(), ticker);
@@ -496,78 +349,13 @@ impl<'a> Kalshi<'a> {
 
     }
 
-    pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), reqwest::Error> {
-        let cancel_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
-
-        let result: DeleteOrderResponse = self
-            .client
-            .delete(cancel_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        Ok((result.order, result.reduced_by))
-    }
-
-    pub fn get_user_token(&self) -> Option<String> {
+     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
             Some(val) => return Some(val.clone()),
             _ => return None,
         }
     }
-
-    pub async fn decrease_order(
-        &self,
-        order_id: &str,
-        reduce_by: Option<i32>,
-        reduce_to: Option<i32>,
-    ) -> Result<Order, KalshiError> {
-        let decrease_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
-
-        match (reduce_by, reduce_to) {
-            (Some(_), Some(_)) => {
-                return Err(KalshiError::UserInputError(
-                    "Can only provide reduce_by strict exclusive or reduce_to, can't provide both".to_string(),
-                ));
-            }
-            (None, None) => {
-                return Err(KalshiError::UserInputError(
-                    "Must provide either reduce_by exclusive or reduce_to, can't provide neither"
-                        .to_string(),
-                ));
-            }
-            _ => {}
-        }
-
-        let decrease_payload = DecreaseOrderPayload {
-            reduce_by: reduce_by,
-            reduce_to: reduce_to,
-        };
-
-        let result: SingleOrderResponse = self
-            .client
-            .post(decrease_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .header("content-type", "application/json".to_string())
-            .json(&decrease_payload)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        
-        Ok(result.order)
-    }
+    
 }
 
 // STRUCTS
@@ -577,11 +365,7 @@ impl<'a> Kalshi<'a> {
 // -----------------------------------------------
 
 
-// used in getbalance method
-#[derive(Debug, Serialize, Deserialize)]
-struct BalanceResponse {
-    balance: i64,
-}
+
 
 #[derive(Debug, Deserialize, Serialize)]
 struct SingleOrderResponse {
@@ -589,11 +373,7 @@ struct SingleOrderResponse {
 }
 
 // used in get_user_fills
-#[derive(Debug, Deserialize, Serialize)]
-struct MultipleFillsResponse {
-    fills: Vec<Fill>,
-    cursor: Option<String>,
-}
+
 
 // used in get_user_orders
 #[derive(Debug, Deserialize, Serialize)]
@@ -679,22 +459,8 @@ struct CreateOrderPayload {
     yes_price: Option<i64>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct DeleteOrderResponse {
-    order: Order,
-    reduced_by: i32,
-}
 
-#[derive(Debug, Deserialize, Serialize)]
-struct DecreaseOrderResponse {
-    order: Order,
-}
 
-#[derive(Debug, Deserialize, Serialize)]
-struct DecreaseOrderPayload {
-    reduce_by: Option<i32>,
-    reduce_to: Option<i32>,
-}
 
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
@@ -711,19 +477,7 @@ pub struct Trade {
     pub created_time: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Fill {
-    pub action: Action,
-    pub count: i32,
-    pub created_time: String,
-    pub is_taker: bool,
-    pub no_price: i64,
-    pub order_id: String,
-    pub side: Side,
-    pub ticker: String,
-    pub trade_id: String,
-    pub yes_price: i64,
-}
+
 
 // used in get_user_orders and get_order
 
@@ -891,102 +645,6 @@ pub struct ServerErrorResponse {
     code: String, 
     message: String
 }
-// CUSTOM ERROR STRUCTS + ENUMS
-// -----------------------------------------------
-
-#[derive(Debug)]
-pub enum KalshiError {
-    RequestError(RequestError),
-    UserInputError(String),
-    InternalError(String)
-}
-
-impl fmt::Display for KalshiError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            KalshiError::RequestError(e) => write!(f, "HTTP Error: {}", e),
-            KalshiError::UserInputError(e) => write!(f, "User Input Error: {}", e),
-            KalshiError::InternalError(e) => write!(f, "INTERNAL ERROR, PLEASE EMAIL DEVELOPER OR MAKE A NEW ISSUE ON THE CRATE'S REPOSITORY: https://github.com/dpeachpeach/kalshi-rust. Specific Error: {}", e)
-        }
-    }
-}
-
-impl Error for KalshiError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            KalshiError::RequestError(e) => Some(e),
-            KalshiError::UserInputError(_) => None,
-            KalshiError::InternalError(_) => None,
-        }
-    }
-}
-
-
-impl From<reqwest::Error> for KalshiError {
-    fn from(err: reqwest::Error) -> Self {
-        if err.is_decode() {
-            KalshiError::RequestError(RequestError::SerializationError(err))
-        } else if err.is_status() {
-            if let Some(status) = err.status() {
-                if status.is_client_error() {
-                    KalshiError::RequestError(RequestError::ClientError(err))
-                } else if status.is_server_error() {
-                    KalshiError::RequestError(RequestError::ServerError(err))
-                } else {
-                    KalshiError::InternalError("Theoretically Impossible Error. Internal code 1".to_string())
-                }
-            } else {
-                KalshiError::RequestError(RequestError::ServerError(err))
-            }
-        } else if err.is_body() || err.is_timeout() {
-            KalshiError::RequestError(RequestError::ServerError(err))
-        } else {
-            KalshiError::InternalError("Theoretically Impossible Error. Internal code 2".to_string())
-        }
-    }
-}
-
-
-
-#[derive(Debug)]
-pub enum RequestError {
-    SerializationError(reqwest::Error),
-    ClientError(reqwest::Error),
-    ServerError(reqwest::Error)
-}
-
-impl fmt::Display for RequestError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RequestError::SerializationError(e) => write!(f, "Serialization Error. You connected successfully but either: Your inputs to a request were incorrect or the exchange is closed! {}", e),
-            RequestError::ClientError(e) => {
-                if let Some(status) = e.status() {
-                    write!(f, "Client Request Error: {}, Status code: {}", e, status)
-                } else {
-                    write!(f, "Client Request Error: {}", e)
-                }
-            },
-            RequestError::ServerError(e) => {
-                if let Some(status) = e.status() {
-                    write!(f, "Server Request Error: {}, Status code: {}", e, status)
-                } else {
-                    write!(f, "Server Request Error: {}", e)
-                }
-            },
-        }
-    }
-}
-
-
-impl Error for RequestError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            RequestError::ClientError(e) => Some(e),
-            RequestError::ServerError(e) => Some(e),
-            RequestError::SerializationError(e) => Some(e)
-        }
-    }
-}
 
 // GENERAL ENUMS
 // -----------------------------------------------
@@ -995,19 +653,7 @@ pub enum TradingEnvironment {
     LiveMarketMode,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Side {
-    Yes,
-    No,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Action {
-    Buy,
-    Sell,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

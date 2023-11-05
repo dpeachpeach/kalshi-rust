@@ -62,14 +62,15 @@ async fn main() {
         .await
         .unwrap();
     */
-    //let my_positions = kalshi_instance.get_user_positions(None, None, None, None, None).await.unwrap();
-    //println!("{:?}", my_events);
+    let my_positions = kalshi_instance.get_user_positions(None, None, None, None, None).await.unwrap();
+    println!("{:?}", my_positions);
     let curr_market = kalshi_instance
         .get_multiple_markets(Some(1), None, None, None, None, None, None, None)
         .await
         .unwrap();
     println!("{:?}", curr_market.1[0]);
     let my_ticker = curr_market.1[0].event_ticker.clone();
+    /* 
     let bought_order = kalshi_instance
         .create_order(
             "buy".to_string(),
@@ -88,6 +89,7 @@ async fn main() {
         .unwrap();
     let curr_id = bought_order.order_id.clone();
     println!("{}", curr_id);
+    */
     //thread::sleep(Duration::from_secs(1));
     //let cancelled_order = kalshi_instance.get_single_order(&curr_id).await.unwrap();
     //println!("{:?}", cancelled_order);
