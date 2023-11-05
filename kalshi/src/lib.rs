@@ -1,5 +1,8 @@
 use core::fmt;
 use std::error::Error;
+mod utils;
+pub mod auth;
+pub mod exchange;
 
 // imports
 use reqwest;
@@ -15,15 +18,7 @@ pub struct Kalshi<'a> {
     client: reqwest::Client,
 }
 
-// MACROS
 
-macro_rules! add_param {
-    ($params:ident, $param_name:expr, $param_value:expr) => {
-        if let Some(param) = $param_value {
-            $params.push(($param_name, param.to_string()));
-        }
-    };
-}
 
 // METHODS
 // -----------------------------------------------
@@ -48,41 +43,7 @@ impl<'a> Kalshi<'a> {
         }
     }
 
-    pub async fn login(&mut self, user: &str, password: &str) -> Result<(), reqwest::Error> {
-        let login_url: &str = &format!("{}/login", self.base_url.to_string());
 
-        let login_payload = LoginPayload {
-            email: user.to_string(),
-            password: password.to_string(),
-        };
-
-        let result: LoginResponse = self
-            .client
-            .post(login_url)
-            .json(&login_payload)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        self.curr_token = Some(format!("Bearer {}", result.token));
-        self.member_id = Some(result.member_id);
-
-        return Ok(());
-    }
-
-    pub async fn logout(&self) -> Result<(), reqwest::Error> {
-        let logout_url: &str = &format!("{}/logout", self.base_url.to_string());
-
-        self.client
-            .post(logout_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
-            .header("content-type", "application/json".to_string())
-            .send()
-            .await?;
-
-        return Ok(());
-    }
 
     pub async fn get_balance(&self) -> Result<i64, reqwest::Error> {
         let balance_url: &str = &format!("{}/portfolio/balance", self.base_url.to_string());
@@ -97,34 +58,6 @@ impl<'a> Kalshi<'a> {
             .await?;
 
         return Ok(result.balance);
-    }
-
-    pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, reqwest::Error> {
-        let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url.to_string());
-
-        let result: ExchangeStatus = self
-            .client
-            .get(exchange_status_url)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        return Ok(result);
-    }
-
-    pub async fn get_exchange_schedule(&self) -> Result<ExchangeScheduleStandard, reqwest::Error> {
-        let exchange_schedule_url: &str =
-            &format!("{}/exchange/schedule", self.base_url.to_string());
-
-        let result: ExchangeScheduleResponse = self
-            .client
-            .get(exchange_schedule_url)
-            .send()
-            .await?
-            .json()
-            .await?;
-        return Ok(result.schedule);
     }
 
     pub async fn get_multiple_fills(
@@ -410,8 +343,6 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        println!("{:?}", result);
-
         Ok((result.cursor, result.markets))
     }
 
@@ -527,7 +458,7 @@ impl<'a> Kalshi<'a> {
         no_price: Option<i64>,
         sell_position_floor: Option<i32>,
         yes_price: Option<i64>,
-    ) -> Result<Order, reqwest::Error> {
+    ) -> Result<Order, KalshiError> {
         let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
         let unwrapped_id = match client_order_id {
@@ -549,9 +480,7 @@ impl<'a> Kalshi<'a> {
             yes_price: yes_price,
         };
 
-        println!("payload_id: {}", order_payload.client_order_id);
-
-        let result: SingleOrderResponse = self
+        let response: SingleOrderResponse = self
             .client
             .post(order_url)
             .header("Authorization", self.curr_token.clone().unwrap())
@@ -562,8 +491,9 @@ impl<'a> Kalshi<'a> {
             .json()
             .await?;
 
-        println!("{:?}", result);
-        Ok(result.order)
+        Ok(response.order)
+
+
     }
 
     pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), reqwest::Error> {
@@ -607,13 +537,13 @@ impl<'a> Kalshi<'a> {
         match (reduce_by, reduce_to) {
             (Some(_), Some(_)) => {
                 return Err(KalshiError::UserInputError(
-                    "Can only provide reduce_by or reduce_to, can't provide both".to_string(),
+                    "Can only provide reduce_by strict exclusive or reduce_to, can't provide both".to_string(),
                 ));
             }
             (None, None) => {
                 return Err(KalshiError::UserInputError(
-                    ("Must provide either reduce_by or reduce_to, can't provide neither"
-                        .to_string()),
+                    "Must provide either reduce_by exclusive or reduce_to, can't provide neither"
+                        .to_string(),
                 ));
             }
             _ => {}
@@ -646,18 +576,7 @@ impl<'a> Kalshi<'a> {
 // PRIVATE STRUCTS INTENDED FOR INTERNAL USE ONLY
 // -----------------------------------------------
 
-// used in login method
-#[derive(Debug, Serialize, Deserialize)]
-struct LoginResponse {
-    member_id: String,
-    token: String,
-}
-// used in login method
-#[derive(Debug, Serialize, Deserialize)]
-struct LoginPayload {
-    email: String,
-    password: String,
-}
+
 // used in getbalance method
 #[derive(Debug, Serialize, Deserialize)]
 struct BalanceResponse {
@@ -696,11 +615,6 @@ struct SingleMarketResponse {
     market: Market,
 }
 
-// used in get_exchange_schedule
-#[derive(Debug, Deserialize, Serialize)]
-struct ExchangeScheduleResponse {
-    schedule: ExchangeScheduleStandard,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 struct SeriesResponse {
@@ -785,39 +699,6 @@ struct DecreaseOrderPayload {
 // PUBLIC STRUCTS AVAILABLE TO USER
 // -----------------------------------------------
 
-// used in get_exchange_status
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ExchangeStatus {
-    pub trading_active: bool,
-    pub exchange_active: bool,
-}
-
-// used in get_exchange_schedule
-#[derive(Debug, Deserialize, Serialize)]
-pub struct DaySchedule {
-    pub open_time: String,
-    pub close_time: String,
-}
-
-// used in get_exchange_schedule
-#[derive(Debug, Deserialize, Serialize)]
-pub struct StandardHours {
-    pub monday: DaySchedule,
-    pub tuesday: DaySchedule,
-    pub wednesday: DaySchedule,
-    pub thursday: DaySchedule,
-    pub friday: DaySchedule,
-    pub saturday: DaySchedule,
-    pub sunday: DaySchedule,
-}
-
-// used in get_exchange_schedule
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ExchangeScheduleStandard {
-    pub standard_hours: StandardHours,
-    pub maintenance_windows: Vec<String>,
-}
-
 // used in get_user_fills and get_fill
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Trade {
@@ -832,13 +713,13 @@ pub struct Trade {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Fill {
-    pub action: String,
+    pub action: Action,
     pub count: i32,
     pub created_time: String,
     pub is_taker: bool,
     pub no_price: i64,
     pub order_id: String,
-    pub side: String,
+    pub side: Side,
     pub ticker: String,
     pub trade_id: String,
     pub yes_price: i64,
@@ -920,7 +801,7 @@ pub struct Market {
     pub volume_24h: i64,
     pub liquidity: i64,
     pub open_interest: i64,
-    pub result: String,
+    pub result: SettlementResult,
     pub cap_strike: Option<f64>,
     pub can_close_early: bool,
     pub expiration_value: String,
@@ -940,7 +821,7 @@ pub struct Series {
     pub ticker: String,
     pub frequency: String,
     pub title: String,
-    pub category: String,
+    pub category:String,
     pub tags: Vec<String>,
     pub settlement_sources: Vec<SettlementSource>,
     pub contract_url: String,
@@ -1004,20 +885,28 @@ pub struct MarketPosition {
     pub total_traded: i64,
 }
 
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ServerErrorResponse {
+    code: String, 
+    message: String
+}
 // CUSTOM ERROR STRUCTS + ENUMS
 // -----------------------------------------------
 
 #[derive(Debug)]
 pub enum KalshiError {
-    HTTPSError(HTTPSError),
+    RequestError(RequestError),
     UserInputError(String),
+    InternalError(String)
 }
 
 impl fmt::Display for KalshiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            KalshiError::HTTPSError(e) => write!(f, "HTTP Error: {}", e),
+            KalshiError::RequestError(e) => write!(f, "HTTP Error: {}", e),
             KalshiError::UserInputError(e) => write!(f, "User Input Error: {}", e),
+            KalshiError::InternalError(e) => write!(f, "INTERNAL ERROR, PLEASE EMAIL DEVELOPER OR MAKE A NEW ISSUE ON THE CRATE'S REPOSITORY: https://github.com/dpeachpeach/kalshi-rust. Specific Error: {}", e)
         }
     }
 }
@@ -1025,8 +914,9 @@ impl fmt::Display for KalshiError {
 impl Error for KalshiError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            KalshiError::HTTPSError(e) => Some(e),
+            KalshiError::RequestError(e) => Some(e),
             KalshiError::UserInputError(_) => None,
+            KalshiError::InternalError(_) => None,
         }
     }
 }
@@ -1034,31 +924,66 @@ impl Error for KalshiError {
 
 impl From<reqwest::Error> for KalshiError {
     fn from(err: reqwest::Error) -> Self {
-        KalshiError::HTTPSError(HTTPSError::ConnectionError(err))
-    }
-}
-
-
-#[derive(Debug)]
-pub enum HTTPSError {
-    ConnectionError(reqwest::Error),
-    SerializationError(reqwest::Error),
-}
-
-impl fmt::Display for HTTPSError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            HTTPSError::ConnectionError(e) => write!(f, "HTTP Request Error: {}", e),
-            HTTPSError::SerializationError(e) => write!(f, "Serialization Error, data provided doesn't match struct: {}", e)
+        if err.is_decode() {
+            KalshiError::RequestError(RequestError::SerializationError(err))
+        } else if err.is_status() {
+            if let Some(status) = err.status() {
+                if status.is_client_error() {
+                    KalshiError::RequestError(RequestError::ClientError(err))
+                } else if status.is_server_error() {
+                    KalshiError::RequestError(RequestError::ServerError(err))
+                } else {
+                    KalshiError::InternalError("Theoretically Impossible Error. Internal code 1".to_string())
+                }
+            } else {
+                KalshiError::RequestError(RequestError::ServerError(err))
+            }
+        } else if err.is_body() || err.is_timeout() {
+            KalshiError::RequestError(RequestError::ServerError(err))
+        } else {
+            KalshiError::InternalError("Theoretically Impossible Error. Internal code 2".to_string())
         }
     }
 }
 
-impl Error for HTTPSError {
+
+
+#[derive(Debug)]
+pub enum RequestError {
+    SerializationError(reqwest::Error),
+    ClientError(reqwest::Error),
+    ServerError(reqwest::Error)
+}
+
+impl fmt::Display for RequestError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RequestError::SerializationError(e) => write!(f, "Serialization Error. You connected successfully but either: Your inputs to a request were incorrect or the exchange is closed! {}", e),
+            RequestError::ClientError(e) => {
+                if let Some(status) = e.status() {
+                    write!(f, "Client Request Error: {}, Status code: {}", e, status)
+                } else {
+                    write!(f, "Client Request Error: {}", e)
+                }
+            },
+            RequestError::ServerError(e) => {
+                if let Some(status) = e.status() {
+                    write!(f, "Server Request Error: {}, Status code: {}", e, status)
+                } else {
+                    write!(f, "Server Request Error: {}", e)
+                }
+            },
+        }
+    }
+}
+
+
+impl Error for RequestError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            HTTPSError::ConnectionError(e) => Some(e),
-            HTTPSError::SerializationError(e) => Some(e),
+            RequestError::ClientError(e) => Some(e),
+            RequestError::ServerError(e) => Some(e),
+            RequestError::SerializationError(e) => Some(e)
         }
     }
 }
@@ -1070,47 +995,47 @@ pub enum TradingEnvironment {
     LiveMarketMode,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Side {
     Yes,
     No,
 }
 
-impl ToString for Side {
-    fn to_string(&self) -> String {
-        match self {
-            Side::Yes => "yes".to_string(),
-            Side::No => "no".to_string(),
-        }
-    }
-}
-
-impl std::str::FromStr for Side {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "yes" => Ok(Side::Yes),
-            "no" => Ok(Side::No),
-            _ => Err(()),
-        }
-    }
-}
-
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Action {
     Buy,
     Sell,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum OrderType {
     Market,
     Limit,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Status {
     Resting,
     Cancelled,
     Executed,
     Pending,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SettlementResult {
+    Yes,
+    No,
+    #[serde(rename = "")]
+    Void,
+    #[serde(rename = "all_no")]
+    AllNo,
+    #[serde(rename = "all_yes")]
+    AllYes,
 }
 
 // unit tests, absent at the moment. all test logic is handled in the test bot dir
