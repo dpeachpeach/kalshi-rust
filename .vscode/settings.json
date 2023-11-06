@@ -2,6 +2,7 @@
     "rust-analyzer.linkedProjects": [
         "./kalshi/Cargo.toml",
         "./kalshi/Cargo.toml",
-        "./kalshi/Cargo.toml"
+        "./kalshi/Cargo.toml",
+        "./sample_bot/Cargo.toml"
     ]
 }

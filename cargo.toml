@@ -1,2 +1,2 @@
 [workspace]
-members = ["kalshi", "test_dir"]
+members = ["kalshi", "sample_bot"]
