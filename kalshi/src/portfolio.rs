@@ -483,7 +483,7 @@ impl fmt::Display for Action {
 #[serde(rename_all = "lowercase")]
 pub enum OrderStatus {
     Resting,
-    Cancelled,
+    Canceled,
     Executed,
     Pending,
 }
@@ -492,7 +492,7 @@ impl fmt::Display for OrderStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             OrderStatus::Resting => write!(f, "resting"),
-            OrderStatus::Cancelled => write!(f, "cancelled"),
+            OrderStatus::Canceled => write!(f, "cancelled"),
             OrderStatus::Executed => write!(f, "executed"),
             OrderStatus::Pending => write!(f, "pending"),
         }

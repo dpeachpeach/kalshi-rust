@@ -358,8 +358,8 @@ pub struct SettlementSource {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Orderbook {
-    pub yes: Vec<Vec<i32>>,
-    pub no: Vec<Vec<i32>>,
+    pub yes: Option<Vec<Vec<i32>>>,
+    pub no: Option<Vec<Vec<i32>>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
