@@ -1,11 +1,12 @@
 use super::Kalshi;
 use crate::kalshi_error::*;
 use uuid::Uuid;
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
 impl<'a> Kalshi<'a> {
-    pub async fn get_balance(&self) -> Result<i64, reqwest::Error> {
+    pub async fn get_balance(&self) -> Result<i64, KalshiError> {
         let balance_url: &str = &format!("{}/portfolio/balance", self.base_url.to_string());
 
         let result: BalanceResponse = self
@@ -29,7 +30,7 @@ impl<'a> Kalshi<'a> {
         status: Option<String>,
         limit: Option<i32>,
         cursor: Option<String>,
-    ) -> Result<(Option<String>, Vec<Order>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Order>), KalshiError> {
         let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
@@ -60,7 +61,7 @@ impl<'a> Kalshi<'a> {
         return Ok((result.cursor, result.orders));
     }
 
-    pub async fn get_single_order(&self, order_id: &String) -> Result<Order, reqwest::Error> {
+    pub async fn get_single_order(&self, order_id: &String) -> Result<Order, KalshiError> {
         let user_order_url: &str = &format!(
             "{}/portfolio/orders/{}",
             self.base_url.to_string(),
@@ -81,7 +82,7 @@ impl<'a> Kalshi<'a> {
 
 
 
-    pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), reqwest::Error> {
+    pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), KalshiError> {
         let cancel_order_url: &str = &format!(
             "{}/portfolio/orders/{}",
             self.base_url.to_string(),
@@ -156,7 +157,7 @@ impl<'a> Kalshi<'a> {
         max_ts: Option<i64>,
         limit: Option<i32>,
         cursor: Option<String>,
-    ) -> Result<(Option<String>, Vec<Fill>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Fill>), KalshiError> {
         let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
@@ -190,7 +191,7 @@ impl<'a> Kalshi<'a> {
         &self,
         limit: Option<i64>,
         cursor: Option<String>,
-    ) -> Result<(Option<String>, Vec<Settlement>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Settlement>), KalshiError> {
         let settlements_url: &str = &format!("{}/portfolio/settlements", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
@@ -223,7 +224,7 @@ impl<'a> Kalshi<'a> {
         settlement_status: Option<String>,
         ticker: Option<String>,
         event_ticker: Option<String>,
-    ) -> Result<(Option<String>, Vec<EventPosition>, Vec<MarketPosition>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<EventPosition>, Vec<MarketPosition>), KalshiError> {
         let positions_url: &str = &format!("{}/portfolio/positions", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
@@ -258,12 +259,12 @@ impl<'a> Kalshi<'a> {
 
     pub async fn create_order(
         &self,
-        action: String,
+        action: Action,
         client_order_id: Option<String>,
         count: i32,
-        side: String,
+        side: Side,
         ticker: String,
-        input_type: String,
+        input_type: OrderType,
         buy_max_cost: Option<i64>,
         expiration_ts: Option<i64>,
         no_price: Option<i64>,
@@ -365,12 +366,12 @@ struct GetPositionsResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct CreateOrderPayload {
-    action: String,
+    action: Action,
     client_order_id: String,
     count: i32,
-    side: String,
+    side: Side,
     ticker: String,
-    r#type: String,
+    r#type: OrderType,
     buy_max_cost: Option<i64>,
     expiration_ts: Option<i64>,
     no_price: Option<i64>,
@@ -385,7 +386,7 @@ pub struct Order {
     pub order_id: String,
     pub user_id: Option<String>,
     pub ticker: String,
-    pub status: String,
+    pub status: OrderStatus,
     pub yes_price: i32,
     pub no_price: i32,
     pub created_time: Option<String>,
@@ -400,8 +401,8 @@ pub struct Order {
     pub queue_position: Option<i32>,
     pub expiration_time: Option<String>,
     pub taker_fees: Option<i32>,
-    pub action: String,
-    pub side: String,
+    pub action: Action,
+    pub side: Side,
     pub r#type: String,
     pub last_update_time: Option<String>,
     pub client_order_id: String,
@@ -467,4 +468,48 @@ pub enum Side {
 pub enum Action {
     Buy,
     Sell,
+}
+
+impl fmt::Display for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Action::Buy => write!(f, "buy"),
+            Action::Sell => write!(f, "sell"),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderStatus {
+    Resting,
+    Cancelled,
+    Executed,
+    Pending,
+}
+
+impl fmt::Display for OrderStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OrderStatus::Resting => write!(f, "resting"),
+            OrderStatus::Cancelled => write!(f, "cancelled"),
+            OrderStatus::Executed => write!(f, "executed"),
+            OrderStatus::Pending => write!(f, "pending"),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderType {
+    Market,
+    Limit,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarketStatus {
+    Open,
+    Closed,
+    Settled
 }

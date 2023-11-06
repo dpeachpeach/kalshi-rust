@@ -1,4 +1,5 @@
 use super::Kalshi;
+use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
 impl<'a> Kalshi<'a> {
@@ -6,7 +7,7 @@ impl<'a> Kalshi<'a> {
         &self,
         event_ticker: &String,
         with_nested_markets: Option<bool>,
-    ) -> Result<Event, reqwest::Error> {
+    ) -> Result<Event, KalshiError> {
         let single_event_url: &str =
             &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
 
@@ -31,7 +32,7 @@ impl<'a> Kalshi<'a> {
         return Ok(result.event);
     }
 
-    pub async fn get_single_market(&self, ticker: &String) -> Result<Market, reqwest::Error> {
+    pub async fn get_single_market(&self, ticker: &String) -> Result<Market, KalshiError> {
         let single_market_url: &str = &format!("{}/markets/{}", self.base_url.to_string(), ticker);
 
         let result: SingleMarketResponse = self
@@ -54,7 +55,7 @@ impl<'a> Kalshi<'a> {
         min_close_ts: Option<i64>,
         status: Option<String>,
         tickers: Option<String>,
-    ) -> Result<(Option<String>, Vec<Market>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Market>), KalshiError> {
         let markets_url: &str = &format!("{}/markets", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(10);
@@ -93,7 +94,7 @@ impl<'a> Kalshi<'a> {
         status: Option<String>,
         series_ticker: Option<String>,
         with_nested_markets: Option<bool>,
-    ) -> Result<(Option<String>, Vec<Event>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Event>), KalshiError> {
         let events_url: &str = &format!("{}/events", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
@@ -115,7 +116,7 @@ impl<'a> Kalshi<'a> {
         return Ok((result.cursor, result.events));
     }
 
-    pub async fn get_series(&self, ticker: &String) -> Result<Series, reqwest::Error> {
+    pub async fn get_series(&self, ticker: &String) -> Result<Series, KalshiError> {
         let series_url: &str = &format!("{}/series/{}", self.base_url.to_string(), ticker);
 
         let result: SeriesResponse = self.client.get(series_url).send().await?.json().await?;
@@ -127,7 +128,7 @@ impl<'a> Kalshi<'a> {
         &self,
         ticker: &String,
         depth: Option<i32>,
-    ) -> Result<Orderbook, reqwest::Error> {
+    ) -> Result<Orderbook, KalshiError> {
         let orderbook_url: &str =
             &format!("{}/markets/{}/orderbook", self.base_url.to_string(), ticker);
 
@@ -160,7 +161,7 @@ impl<'a> Kalshi<'a> {
         cursor: Option<String>,
         min_ts: Option<i64>,
         max_ts: Option<i64>,
-    ) -> Result<(Option<String>, Vec<Snapshot>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Snapshot>), KalshiError> {
         let market_history_url: &str =
             &format! {"{}/markets/{}/history", self.base_url.to_string(), ticker};
 
@@ -196,7 +197,7 @@ impl<'a> Kalshi<'a> {
         ticker: Option<String>,
         min_ts: Option<i64>,
         max_ts: Option<i64>,
-    ) -> Result<(Option<String>, Vec<Trade>), reqwest::Error> {
+    ) -> Result<(Option<String>, Vec<Trade>), KalshiError> {
         let trades_url: &str = &format!("{}/markets/trades", self.base_url.to_string());
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
@@ -387,7 +388,6 @@ pub struct Trade {
 
 // ENUMS
 
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SettlementResult {
@@ -399,4 +399,12 @@ pub enum SettlementResult {
     AllNo,
     #[serde(rename = "all_yes")]
     AllYes,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarketStatus {
+    Open,
+    Closed,
+    Settled
 }

@@ -1,9 +1,9 @@
 use super::Kalshi;
-
+use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
 impl<'a> Kalshi<'a> {
-    pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, reqwest::Error> {
+    pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, KalshiError> {
         let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url.to_string());
 
         let result: ExchangeStatus = self
@@ -17,7 +17,7 @@ impl<'a> Kalshi<'a> {
         return Ok(result);
     }
 
-    pub async fn get_exchange_schedule(&self) -> Result<ExchangeScheduleStandard, reqwest::Error> {
+    pub async fn get_exchange_schedule(&self) -> Result<ExchangeScheduleStandard, KalshiError> {
         let exchange_schedule_url: &str =
             &format!("{}/exchange/schedule", self.base_url.to_string());
 

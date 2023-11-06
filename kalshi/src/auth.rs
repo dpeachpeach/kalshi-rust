@@ -1,9 +1,9 @@
 use super::Kalshi;
-
+use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
 impl<'a> Kalshi<'a> {
-    pub async fn login(&mut self, user: &str, password: &str) -> Result<(), reqwest::Error> {
+    pub async fn login(&mut self, user: &str, password: &str) -> Result<(), KalshiError> {
         let login_url: &str = &format!("{}/login", self.base_url.to_string());
 
         let login_payload = LoginPayload {
@@ -26,7 +26,7 @@ impl<'a> Kalshi<'a> {
         return Ok(());
     }
 
-    pub async fn logout(&self) -> Result<(), reqwest::Error> {
+    pub async fn logout(&self) -> Result<(), KalshiError> {
         let logout_url: &str = &format!("{}/logout", self.base_url.to_string());
 
         self.client

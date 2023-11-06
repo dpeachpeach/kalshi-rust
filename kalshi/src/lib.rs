@@ -9,7 +9,6 @@ pub mod market;
 
 // imports
 use reqwest;
-use serde::{Deserialize, Serialize};
 
 // Main Implementation, plan to abstract out in the future
 #[derive(Debug)]
@@ -49,10 +48,6 @@ impl<'a> Kalshi<'a> {
             _ => return None,
         }
     }
-
-
-
-
     
 }
 
@@ -65,21 +60,8 @@ pub enum TradingEnvironment {
 
 
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum OrderType {
-    Market,
-    Limit,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Status {
-    Resting,
-    Cancelled,
-    Executed,
-    Pending,
-}
+
 
 
 

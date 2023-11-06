@@ -1,8 +1,7 @@
 use dotenv::dotenv;
 use kalshi::Kalshi;
 use std::env;
-use std::thread;
-use std::time::Duration;
+
 
 extern crate kalshi;
 
@@ -69,7 +68,9 @@ async fn main() {
         .await
         .unwrap();
     println!("{:?}", curr_market.1[0]);
-    let my_ticker = curr_market.1[0].event_ticker.clone();
+    //let my_ticker = curr_market.1[0].event_ticker.clone();
+    //let curr_schedule = kalshi_instance.get_exchange_schedule().await.unwrap();
+    //println!("{:?}", curr_schedule);
     /* 
     let bought_order = kalshi_instance
         .create_order(
