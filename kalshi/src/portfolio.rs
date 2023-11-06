@@ -506,10 +506,3 @@ pub enum OrderType {
     Limit,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MarketStatus {
-    Open,
-    Closed,
-    Settled
-}
