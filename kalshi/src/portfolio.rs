@@ -1,5 +1,6 @@
 use super::Kalshi;
 use crate::kalshi_error::*;
+use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
@@ -185,6 +186,127 @@ impl<'a> Kalshi<'a> {
         return Ok((result.cursor, result.fills));
     }
 
+    pub async fn get_portfolio_settlements(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+    ) -> Result<(Option<String>, Vec<Settlement>), reqwest::Error> {
+        let settlements_url: &str = &format!("{}/portfolio/settlements", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+
+        let settlements_url = reqwest::Url::parse_with_params(settlements_url, &params)
+            .unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PortfolioSettlementResponse = self
+            .client
+            .get(settlements_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok((result.cursor, result.settlements))
+    }
+
+    pub async fn get_user_positions(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+        settlement_status: Option<String>,
+        ticker: Option<String>,
+        event_ticker: Option<String>,
+    ) -> Result<(Option<String>, Vec<EventPosition>, Vec<MarketPosition>), reqwest::Error> {
+        let positions_url: &str = &format!("{}/portfolio/positions", self.base_url.to_string());
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "settlement_status", settlement_status);
+        add_param!(params, "ticker", ticker);
+        add_param!(params, "event_ticker", event_ticker);
+
+        let positions_url =
+            reqwest::Url::parse_with_params(positions_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: GetPositionsResponse = self
+            .client
+            .get(positions_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok((
+            result.cursor,
+            result.event_positions,
+            result.market_positions,
+        ))
+    }
+
+    pub async fn create_order(
+        &self,
+        action: String,
+        client_order_id: Option<String>,
+        count: i32,
+        side: String,
+        ticker: String,
+        input_type: String,
+        buy_max_cost: Option<i64>,
+        expiration_ts: Option<i64>,
+        no_price: Option<i64>,
+        sell_position_floor: Option<i32>,
+        yes_price: Option<i64>,
+    ) -> Result<Order, KalshiError> {
+        let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+
+        let unwrapped_id = match client_order_id {
+            Some(id) => id,
+            _ => String::from(Uuid::new_v4()),
+        };
+
+        let order_payload = CreateOrderPayload {
+            action: action,
+            client_order_id: unwrapped_id,
+            count: count,
+            side: side,
+            ticker: ticker,
+            r#type: input_type,
+            buy_max_cost: buy_max_cost,
+            expiration_ts: expiration_ts,
+            no_price: no_price,
+            sell_position_floor: sell_position_floor,
+            yes_price: yes_price,
+        };
+
+        let response: SingleOrderResponse = self
+            .client
+            .post(order_url)
+            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("content-type", "application/json".to_string())
+            .json(&order_payload)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok(response.order)
+
+
+    }
+
 }
 
 // PRIVATE STRUCTS
@@ -228,6 +350,35 @@ struct MultipleFillsResponse {
     cursor: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct PortfolioSettlementResponse {
+    cursor: Option<String>,
+    settlements: Vec<Settlement>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct GetPositionsResponse {
+    cursor: Option<String>,
+    event_positions: Vec<EventPosition>,
+    market_positions: Vec<MarketPosition>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct CreateOrderPayload {
+    action: String,
+    client_order_id: String,
+    count: i32,
+    side: String,
+    ticker: String,
+    r#type: String,
+    buy_max_cost: Option<i64>,
+    expiration_ts: Option<i64>,
+    no_price: Option<i64>,
+    sell_position_floor: Option<i32>,
+    yes_price: Option<i64>,
+}
+
+
 // PUBLIC STRUCTS
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Order {
@@ -269,6 +420,39 @@ pub struct Fill {
     pub ticker: String,
     pub trade_id: String,
     pub yes_price: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Settlement {
+    pub market_result: String,
+    pub no_count: i64,
+    pub no_total_cost: i64,
+    pub revenue: i64,
+    pub settled_time: String,
+    pub ticker: String,
+    pub yes_count: i64,
+    pub yes_total_cost: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EventPosition {
+    pub event_exposure: i64,
+    pub event_ticker: String,
+    pub fees_paid: i64,
+    pub realized_pnl: i64,
+    pub resting_order_count: i32,
+    pub total_cost: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MarketPosition {
+    pub fees_paid: i64,
+    pub market_exposure: i64,
+    pub position: i32,
+    pub realized_pnl: i64,
+    pub resting_orders_count: i32,
+    pub ticker: String,
+    pub total_traded: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
