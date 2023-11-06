@@ -45,13 +45,14 @@ Every function present in the library wraps around the [Kalshi Trading API](http
 | **Market/GetMarketOrderBook** | Get a market's order book |✅         |
 | **Market/GetSeries** | Get data about a series |✅         |
 
-### Detailed Docs, More verbose errors + QOL: 🟡
-I am currently revamping the errors provided by the API to provide more support
-for the user to debug their work. I am also revamping the datatypes of the project
+### More verbose errors + QOL: ✅
+I completed revamping the errors provided by the API to provide more support
+for the user to debug their work. I also completed revamping the datatypes of the project
 to take advantage of Rust's enums to ensure that the user minimizes error-prone requests to the server. 
 
-After the project is successfully refactored and the quality of life is topped off,
-I will write detailed docs to support a user's implementation of a Kalshi bot.
+
+### Writing detailed docs:  🟡 
+I'm writing detailed docs + a user manual  to support a user's implementation of a Kalshi bot.
 
 ### Websocket wrapper: ❌    
 As of now the kalshi_api doesn't host a lot of functionality through a websocket
