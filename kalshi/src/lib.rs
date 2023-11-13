@@ -38,18 +38,25 @@ pub use market::*;
 // imports
 use reqwest;
 
-/// Main struct for handling [specific functionality].
+/// The Kalshi struct is the core of the kalshi-crate. It acts as the interface
+/// between the user and the market, abstracting away the meat of requests
+/// by encapsulating authentication information and the client itself.
 ///
-/// The `Kalshi` struct is used to [description of what it does].
-///
-/// # Examples
+/// ## Creating a new `Kalshi` instance for demo mode:
 ///
 /// ```
-/// use my_crate::Kalshi;
+/// use kalshi::Kalshi;
+/// use kalshi::TradingEnvironment;
 ///
-/// let kalshi = Kalshi::new();
-/// // Example usage
+/// let kalshi = Kalshi::new(TradingEnvironment::DemoMode);
 /// ```
+///
+/// # Fields
+/// - `base_url`: The base URL for the API, determined by the trading environment.
+/// - `curr_token`: A field for storing the current authentication token.
+/// - `member_id`: A field for storing the member ID.
+/// - `client`: The HTTP client used for making requests to the marketplace.
+///
 #[derive(Debug)]
 pub struct Kalshi<'a> {
     base_url: &'a str,
@@ -59,6 +66,21 @@ pub struct Kalshi<'a> {
 }
 
 impl<'a> Kalshi<'a> {
+    /// Creates a new instance of Kalshi with the specified trading environment.
+    /// This environment determines the base URL used for API requests.
+    ///
+    /// # Arguments
+    ///
+    /// * `trading_env` - The trading environment to be used (LiveMarketMode or DemoMode).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use kalshi::{Kalshi, TradingEnvironment};
+    ///
+    /// let kalshi = Kalshi::new(TradingEnvironment::DemoMode);
+    /// ```
+    ///
     pub fn new(trading_env: TradingEnvironment) -> Kalshi<'a> {
         return Kalshi {
             base_url: utils::build_base_url(trading_env) ,
@@ -68,6 +90,26 @@ impl<'a> Kalshi<'a> {
         };
     }
 
+    /// Retrieves the current user authentication token, if available.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Option<String>` containing the authentication token. If no token
+    /// is currently stored, it returns `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kalshi::{Kalshi, TradingEnvironment};
+    /// let kalshi = Kalshi::new(TradingEnvironment::DemoMode);
+    /// let token = kalshi.get_user_token();
+    /// if let Some(t) = token {
+    ///     println!("Current token: {}", t);
+    /// } else {
+    ///     println!("No token found");
+    /// }
+    /// ```
+    ///
     pub fn get_user_token(&self) -> Option<String> {
         match &self.curr_token {
             Some(val) => return Some(val.clone()),
