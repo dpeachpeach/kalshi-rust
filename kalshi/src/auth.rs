@@ -1,8 +1,12 @@
-use super::Kalshi;
+//! This module contains methods related to authentication. Logging in and Logging out.
 use crate::kalshi_error::*;
+use super::Kalshi;
 use serde::{Deserialize, Serialize};
 
+
+
 impl<'a> Kalshi<'a> {
+    /// This is a method in the auth module
     pub async fn login(&mut self, user: &str, password: &str) -> Result<(), KalshiError> {
         let login_url: &str = &format!("{}/login", self.base_url.to_string());
 
@@ -26,6 +30,7 @@ impl<'a> Kalshi<'a> {
         return Ok(());
     }
 
+    /// This is a method in the auth module
     pub async fn logout(&self) -> Result<(), KalshiError> {
         let logout_url: &str = &format!("{}/logout", self.base_url.to_string());
 

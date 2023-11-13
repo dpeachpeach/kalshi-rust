@@ -1,16 +1,21 @@
-
 #[macro_use] 
 mod utils;
-pub mod kalshi_error;
-pub mod auth;
-pub mod exchange;
-pub mod portfolio;
-pub mod market; 
+mod kalshi_error;
+mod auth;
+mod exchange;
+mod portfolio;
+mod market; 
+
+pub use kalshi_error::*;
+pub use auth::*;
+pub use exchange::*;
+pub use portfolio::*;
+pub use market::*;
 
 // imports
 use reqwest;
 
-// Main Implementation, plan to abstract out in the future
+/// Main Kalshi Struct
 #[derive(Debug)]
 pub struct Kalshi<'a> {
     base_url: &'a str,
@@ -21,6 +26,7 @@ pub struct Kalshi<'a> {
 
 // METHODS
 // -----------------------------------------------
+
 impl<'a> Kalshi<'a> {
     pub fn new() -> Kalshi<'a> {
         return Kalshi {

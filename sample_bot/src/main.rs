@@ -2,7 +2,6 @@ use dotenv::dotenv;
 use kalshi::Kalshi;
 use std::env;
 
-
 extern crate kalshi;
 
 enum APIType {
@@ -59,12 +58,12 @@ async fn main() {
 
       let bought_order = kalshi_instance
         .create_order(
-            kalshi::portfolio::Action::Buy,
+            kalshi::Action::Buy,
             None,
             1,
-            kalshi::portfolio::Side::Yes,
+            kalshi::Side::Yes,
             new_york_ticker,
-            kalshi::portfolio::OrderType::Limit,
+            kalshi::OrderType::Limit,
             None,
             None,
             None,
