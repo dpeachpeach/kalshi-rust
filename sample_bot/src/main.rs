@@ -43,9 +43,7 @@ async fn main() {
 
     let (username, password) = retreive_credentials(APIType::Demo).unwrap() ;
 
-    let mut kalshi_instance = Kalshi::new();
-
-    kalshi_instance.build_base_url(kalshi::TradingEnvironment::DemoMode);
+    let mut kalshi_instance = Kalshi::new(kalshi::TradingEnvironment::DemoMode);
 
     kalshi_instance.login(&username, &password).await;
 
@@ -76,5 +74,4 @@ async fn main() {
     let ny_order_id = bought_order.order_id.clone();
     
     let cancelled_order = kalshi_instance.cancel_order(&ny_order_id).await.unwrap();
-
 }
