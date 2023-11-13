@@ -273,6 +273,26 @@ impl<'a> Kalshi<'a> {
     ) -> Result<Order, KalshiError> {
         let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
 
+        match input_type {
+            OrderType::Limit => {
+                match (no_price, yes_price) {
+                    (Some(_), Some(_)) => {
+                        return Err(KalshiError::UserInputError(
+                            "Can only provide no_price exclusive or yes_price, can't provide both".to_string(),
+                        ));
+                    }
+                    (None, None) => {
+                        return Err(KalshiError::UserInputError(
+                            "Must provide either no_price exclusive or yes_price, can't provide neither"
+                                .to_string(),
+                        ));
+                    }
+                    _ => {}
+                }
+            },
+            _ => {} 
+        }
+
         let unwrapped_id = match client_order_id {
             Some(id) => id,
             _ => String::from(Uuid::new_v4()),
