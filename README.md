@@ -6,7 +6,7 @@ This is a wrapper for the [Kalshi](https://kalshi.com/) trading API written by a
 This wrapper is asynchronous and typically more performant than the official Python API provided by the developers, presented here: [*KalshiDevAPI*](https://github.com/Kalshi/kalshi-python).
 
 ## Documentation
-Read the fully-featured docs [here](https://docs.rs/kalshi/0.9.0/kalshi/)
+Read the fully-featured docs [here](https://docs.rs/kalshi/0.9.0/kalshi/) and check the project out on [crates.io](https://crates.io/crates/kalshi/0.9.0).
 
 ## Sample Bot
 
