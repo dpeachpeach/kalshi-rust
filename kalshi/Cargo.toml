@@ -1,7 +1,18 @@
 [package]
 name = "kalshi"
-version = "0.1.0"
+version = "0.9.0"
+authors = ["David Petre <david.petre31@gmail.com>"]
 edition = "2021"
+rust-version = "1.72"
+description = """An HTTPS and Websocket wrapper that allows users to write 
+trading bots for the Kalshi events trading platform.
+"""
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dpeachpeach/kalshi-rust"
+keywords = ["finance", "trading", "kalshi", "bots"]
+readme = "README.md"
+
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
