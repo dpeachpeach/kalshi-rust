@@ -3,12 +3,23 @@ use std::error::Error;
 // CUSTOM ERROR STRUCTS + ENUMS
 // -----------------------------------------------
 
+/// A comprehensive set of errors that might occur in the Kalshi module.
+///
+/// This enum encompasses various types of errors, including HTTP request errors, 
+/// user input errors, and internal errors. It provides a unified error type for 
+/// the entire Kalshi module.
+///
 #[derive(Debug)]
 pub enum KalshiError {
+    /// Errors that occur during HTTP requests. This includes connectivity issues,
+    /// response serialization problems, and HTTP status errors.
     RequestError(RequestError),
+    /// Errors caused by incorrect or invalid user input.
     UserInputError(String),
+    /// Errors representing unexpected internal issues or situations that are not supposed to happen.
     InternalError(String),
 }
+
 
 impl fmt::Display for KalshiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -58,7 +69,7 @@ impl From<reqwest::Error> for KalshiError {
     }
 }
 
-/// Represents specific kinds of HTTP request errors encountered in the Kalshi module.
+/// Specific kinds of HTTP request errors encountered in the Kalshi module.
 ///
 /// This enum categorizes errors related to HTTP requests, including serialization errors, client-side errors,
 /// and server-side errors.

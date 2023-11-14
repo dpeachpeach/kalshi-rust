@@ -12,6 +12,12 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok(Event)`: Event object on successful retrieval.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// # Example
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let event_ticker = "some_event_ticker";
+    /// let event = kalshi_instance.get_single_event(event_ticker, None).await.unwrap();
+    /// ```
     pub async fn get_single_event(
         &self,
         event_ticker: &String,
@@ -49,6 +55,12 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok(Market)`: Market object on successful retrieval.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// # Example
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let market_ticker = "some_event_ticker";
+    /// let market = kalshi_instance.get_single_event(market_ticker).await.unwrap();
+    /// ```
     pub async fn get_single_market(&self, ticker: &String) -> Result<Market, KalshiError> {
         let single_market_url: &str = &format!("{}/markets/{}", self.base_url.to_string(), ticker);
 
@@ -80,6 +92,22 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Market>))`: A tuple containing an optional pagination cursor and a vector of `Market` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// 
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let markets_result = kalshi_instance.get_multiple_markets(
+    ///     Some(10),
+    ///     None,
+    ///     Some("event_ticker"),
+    ///     None,
+    ///     None,
+    ///     None,
+    ///     None,
+    ///     None
+    /// ).await.unwrap();
+    /// ```
     pub async fn get_multiple_markets(
         &self,
         limit: Option<i64>,
@@ -137,6 +165,21 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Event>))`: A tuple containing an optional pagination cursor and a vector of `Event` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// 
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let events_result = kalshi_instance.get_multiple_events(
+    ///     Some(10),
+    ///     None,
+    ///     Some("active"),
+    ///     None,
+    ///     Some(true)
+    /// ).await.unwrap();
+    /// println!("Events: {:?}", events_result);
+    /// ```
+    ///
     pub async fn get_multiple_events(
         &self,
         limit: Option<i64>,
@@ -176,6 +219,12 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok(Series)`: `Series` object on successful retrieval.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// # Example
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let series_ticker = "some_series_ticker";
+    /// let series = kalshi_instance.get_series(series_ticker).await.unwrap();
+    /// ```
     pub async fn get_series(&self, ticker: &String) -> Result<Series, KalshiError> {
         let series_url: &str = &format!("{}/series/{}", self.base_url.to_string(), ticker);
 
@@ -195,6 +244,14 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok(Orderbook)`: `Orderbook` object on successful retrieval.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// 
+    /// # Example
+    /// Returns an orderbook with a depth of 10 entries for some market.
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let market_ticker = "some_market_ticker";
+    /// let orderbook = kalshi_instance.get_market_orderbook(market_ticker, Some(10)).await.unwrap();
+    /// ```
     pub async fn get_market_orderbook(
         &self,
         ticker: &String,
@@ -241,6 +298,18 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Snapshot>))`: A tuple containing an optional pagination cursor and a vector of `Snapshot` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let market_history = kalshi_instance.get_market_history(
+    ///     "ticker_name",
+    ///     Some(10),
+    ///     None,
+    ///     None,
+    ///     None
+    /// ).await.unwrap();
+    /// ```
     pub async fn get_market_history(
         &self,
         ticker: &String,
@@ -293,6 +362,16 @@ impl<'a> Kalshi<'a> {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Trade>))`: A tuple containing an optional pagination cursor and a vector of `Trade` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let trades = kalshi_instance.get_trades(
+    ///     None,
+    ///     Some(10),
+    ///     Some("ticker_name"),
+    ///     None,
+    ///     None
+    /// ).await.unwrap();
+    /// ```
     pub async fn get_trades(
         &self,
         cursor: Option<String>,

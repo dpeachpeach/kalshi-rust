@@ -6,6 +6,23 @@ use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 
 impl<'a> Kalshi<'a> {
+    /// Retrieves the current balance of the authenticated user from the Kalshi exchange.
+    ///
+    /// This method fetches the user's balance, requiring a valid authentication token. 
+    /// If the user is not logged in or the token is missing, it returns an error.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(i64)`: The user's current balance on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let balance = kalshi_instance.get_balance().await.unwrap();
+    /// ```
+    ///
     pub async fn get_balance(&self) -> Result<i64, KalshiError> {
         if self.curr_token == None {
             return Err(KalshiError::UserInputError(
@@ -28,6 +45,37 @@ impl<'a> Kalshi<'a> {
         Ok(result.balance)
     }
 
+    /// Retrieves a list of orders from the Kalshi exchange based on specified criteria.
+    ///
+    /// This method fetches multiple orders, allowing for filtering by ticker, event ticker, time range, 
+    /// status, and pagination. A valid authentication token is required to access this information.
+    /// If the user is not logged in or the token is missing, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `ticker` - An optional string to filter orders by market ticker.
+    /// * `event_ticker` - An optional string to filter orders by event ticker.
+    /// * `min_ts` - An optional minimum timestamp for order creation time.
+    /// * `max_ts` - An optional maximum timestamp for order creation time.
+    /// * `status` - An optional string to filter orders by their status.
+    /// * `limit` - An optional integer to limit the number of orders returned.
+    /// * `cursor` - An optional string for pagination cursor.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok((Option<String>, Vec<Order>))`: A tuple containing an optional pagination cursor 
+    ///   and a vector of `Order` objects on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    /// Retrieves all possible orders (Will crash, need to limit for a successful request).
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let orders = kalshi_instance.get_multiple_orders(
+    ///     Some("ticker_name"), None, None, None, None, None, None
+    /// ).await.unwrap();
+    /// ```
+    ///
     pub async fn get_multiple_orders(
         &self,
         ticker: Option<String>,
@@ -74,6 +122,28 @@ impl<'a> Kalshi<'a> {
         return Ok((result.cursor, result.orders));
     }
 
+    /// Retrieves detailed information about a specific order from the Kalshi exchange.
+    ///
+    /// This method fetches data for a single order identified by its order ID. A valid authentication token 
+    /// is required to access this information. If the user is not logged in or the token is missing, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_id` - A reference to a string representing the order's unique identifier.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(Order)`: Detailed information about the specified order on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let order_id = "some_order_id";
+    /// let order = kalshi_instance.get_single_order(&order_id).await.unwrap();
+    /// ```
+    ///
     pub async fn get_single_order(&self, order_id: &String) -> Result<Order, KalshiError> {
         if self.curr_token == None {
             return Err(KalshiError::UserInputError(
@@ -99,6 +169,30 @@ impl<'a> Kalshi<'a> {
         return Ok(result.order);
     }
 
+    /// Cancels an existing order on the Kalshi exchange.
+    ///
+    /// This method cancels an order specified by its ID. A valid authentication token is 
+    /// required to perform this action. If the user is not logged in or the token is missing, 
+    /// it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_id` - A string slice referencing the ID of the order to be canceled.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok((Order, i32))`: A tuple containing the updated `Order` object after cancellation 
+    ///   and an integer indicating the amount by which the order was reduced on successful cancellation.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let order_id = "some_order_id";
+    /// let (order, reduced_by) = kalshi_instance.cancel_order(order_id).await.unwrap();
+    /// ```
+    ///
     pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), KalshiError> {
         if self.curr_token == None {
             return Err(KalshiError::UserInputError(
@@ -123,7 +217,33 @@ impl<'a> Kalshi<'a> {
 
         Ok((result.order, result.reduced_by))
     }
-
+    /// Decreases the size of an existing order on the Kalshi exchange.
+    ///
+    /// This method allows reducing the size of an order either by specifying the amount to reduce 
+    /// (`reduce_by`) or setting a new target size (`reduce_to`). A valid authentication token is 
+    /// required for this operation. It's important to provide either `reduce_by` or `reduce_to`, 
+    /// but not both at the same time.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_id` - A string slice referencing the ID of the order to be decreased.
+    /// * `reduce_by` - An optional integer specifying how much to reduce the order by.
+    /// * `reduce_to` - An optional integer specifying the new size of the order.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(Order)`: The updated `Order` object after decreasing the size.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `reduce_by` and `reduce_to` are provided, 
+    ///   or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let order_id = "some_order_id";
+    /// let decrease_result = kalshi_instance.decrease_order(order_id, Some(5), None).await.unwrap();
+    /// ```
+    ///
     pub async fn decrease_order(
         &self,
         order_id: &str,
@@ -177,6 +297,36 @@ impl<'a> Kalshi<'a> {
         Ok(result.order)
     }
 
+    /// Retrieves a list of fills from the Kalshi exchange based on specified criteria.
+    ///
+    /// This method fetches multiple fills, allowing for filtering by ticker, order ID, time range,
+    /// and pagination. A valid authentication token is required to access this information.
+    /// If the user is not logged in or the token is missing, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `ticker` - An optional string to filter fills by market ticker.
+    /// * `order_id` - An optional string to filter fills by order ID.
+    /// * `min_ts` - An optional minimum timestamp for fill creation time.
+    /// * `max_ts` - An optional maximum timestamp for fill creation time.
+    /// * `limit` - An optional integer to limit the number of fills returned.
+    /// * `cursor` - An optional string for pagination cursor.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok((Option<String>, Vec<Fill>))`: A tuple containing an optional pagination cursor 
+    ///   and a vector of `Fill` objects on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    /// Retrieves all filled orders
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let fills = kalshi_instance.get_multiple_fills(
+    ///     Some("ticker_name"), None, None, None, None, None
+    /// ).await.unwrap();
+    /// ```
+    ///
     pub async fn get_multiple_fills(
         &self,
         ticker: Option<String>,
@@ -221,6 +371,30 @@ impl<'a> Kalshi<'a> {
         return Ok((result.cursor, result.fills));
     }
 
+    /// Retrieves a list of portfolio settlements from the Kalshi exchange.
+    ///
+    /// This method fetches settlements in the user's portfolio, with options for pagination using limit and cursor.
+    /// A valid authentication token is required to access this information.
+    /// If the user is not logged in or the token is missing, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `limit` - An optional integer to limit the number of settlements returned.
+    /// * `cursor` - An optional string for pagination cursor.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok((Option<String>, Vec<Settlement>))`: A tuple containing an optional pagination cursor 
+    ///   and a vector of `Settlement` objects on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let settlements = kalshi_instance.get_portfolio_settlements(None, None).await.unwrap();
+    /// ```
+    ///
     pub async fn get_portfolio_settlements(
         &self,
         limit: Option<i64>,
@@ -257,6 +431,34 @@ impl<'a> Kalshi<'a> {
         Ok((result.cursor, result.settlements))
     }
 
+    /// Retrieves the user's positions in events and markets from the Kalshi exchange.
+    ///
+    /// This method fetches the user's positions, providing options for filtering by settlement status, 
+    /// specific ticker, and event ticker, as well as pagination using limit and cursor. A valid 
+    /// authentication token is required to access this information. If the user is not logged in 
+    /// or the token is missing, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `limit` - An optional integer to limit the number of positions returned.
+    /// * `cursor` - An optional string for pagination cursor.
+    /// * `settlement_status` - An optional string to filter positions by their settlement status.
+    /// * `ticker` - An optional string to filter positions by market ticker.
+    /// * `event_ticker` - An optional string to filter positions by event ticker.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok((Option<String>, Vec<EventPosition>, Vec<MarketPosition>))`: A tuple containing an optional pagination cursor, 
+    ///   a vector of `EventPosition` objects, and a vector of `MarketPosition` objects on successful retrieval.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let user_positions = kalshi_instance.get_user_positions(None, None, None, None, None).await.unwrap();
+    /// ```
+    ///
     pub async fn get_user_positions(
         &self,
         limit: Option<i64>,
@@ -303,6 +505,54 @@ impl<'a> Kalshi<'a> {
         ))
     }
 
+    /// Submits an order to the Kalshi exchange.
+    ///
+    /// This method allows placing an order in the market, requiring details such as action, count, side,
+    /// ticker, order type, and other optional parameters. A valid authentication token is 
+    /// required for this operation. Note that for limit orders, either `no_price` or `yes_price` must be provided, 
+    /// but not both.
+    ///
+    /// # Arguments
+    ///
+    /// * `action` - The action (buy/sell) of the order.
+    /// * `client_order_id` - An optional client-side identifier for the order.
+    /// * `count` - The number of shares or contracts to trade.
+    /// * `side` - The side (Yes/No) of the order.
+    /// * `ticker` - The market ticker the order is placed in.
+    /// * `input_type` - The type of the order (e.g., market, limit).
+    /// * `buy_max_cost` - The maximum cost for a buy order. Optional.
+    /// * `expiration_ts` - The expiration timestamp for the order. Optional.
+    /// * `no_price` - The price for the 'No' option in a limit order. Optional.
+    /// * `sell_position_floor` - The minimum position size to maintain after selling. Optional.
+    /// * `yes_price` - The price for the 'Yes' option in a limit order. Optional.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(Order)`: The created `Order` object on successful placement.
+    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `no_price` and `yes_price` are provided for limit orders, 
+    ///   or if there is an issue with the request.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let action = Action::Buy;
+    /// let side = Side::Yes;
+    /// let order = kalshi_instance.create_order(
+    ///     action,
+    ///     None,
+    ///     10,
+    ///     side,
+    ///     "example_ticker",
+    ///     OrderType::Limit,
+    ///     None,
+    ///     None,
+    ///     None,
+    ///     None,
+    ///     Some(100)
+    /// ).await.unwrap();
+    /// ```
+    ///
     pub async fn create_order(
         &self,
         action: Action,
@@ -448,92 +698,186 @@ struct CreateOrderPayload {
 }
 
 // PUBLIC STRUCTS
+// -------------------------
+
+/// Represents an order in the Kalshi exchange.
+///
+/// This struct details an individual order, including its identification, status, prices, and various metrics related to its lifecycle.
+///
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Order {
+    /// Unique identifier for the order.
     pub order_id: String,
+    /// Identifier of the user who placed the order. Optional.
     pub user_id: Option<String>,
+    /// Ticker of the market associated with the order.
     pub ticker: String,
+    /// Current status of the order (e.g., resting, executed).
     pub status: OrderStatus,
+    /// Price of the 'Yes' option in the order.
     pub yes_price: i32,
+    /// Price of the 'No' option in the order.
     pub no_price: i32,
+    /// Timestamp when the order was created. Optional.
     pub created_time: Option<String>,
+    /// Count of fills where the order acted as a taker. Optional.
     pub taker_fill_count: Option<i32>,
+    /// Total cost of taker fills. Optional.
     pub taker_fill_cost: Option<i32>,
+    /// Count of order placements. Optional.
     pub place_count: Option<i32>,
+    /// Count of order decreases. Optional.
     pub decrease_count: Option<i32>,
+    /// Count of fills where the order acted as a maker. Optional.
     pub maker_fill_count: Option<i32>,
+    /// Count of FCC (Financial Crime Compliance) cancellations. Optional.
     pub fcc_cancel_count: Option<i32>,
+    /// Count of cancellations at market close. Optional.
     pub close_cancel_count: Option<i32>,
+    /// Remaining count of the order. Optional.
     pub remaining_count: Option<i32>,
+    /// Position of the order in the queue. Optional.
     pub queue_position: Option<i32>,
+    /// Expiration time of the order. Optional.
     pub expiration_time: Option<String>,
+    /// Fees incurred as a taker. Optional.
     pub taker_fees: Option<i32>,
+    /// The action (buy/sell) of the order.
     pub action: Action,
+    /// The side (Yes/No) of the order.
     pub side: Side,
+    /// Type of the order (e.g., market, limit).
     pub r#type: String,
+    /// Last update time of the order. Optional.
     pub last_update_time: Option<String>,
+    /// Client-side identifier for the order.
     pub client_order_id: String,
+    /// Group identifier for the order.
     pub order_group_id: String,
 }
 
+
+/// A completed transaction (a 'fill') in the Kalshi exchange.
+///
+/// This struct details a single fill instance, including the action taken, the quantity,
+/// the involved prices, and the identifiers of the order and trade.
+///
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Fill {
+    /// The action (buy/sell) of the fill.
     pub action: Action,
+    /// The number of contracts or shares involved in the fill.
     pub count: i32,
+    /// The timestamp when the fill was created.
     pub created_time: String,
+    /// Indicates if the fill was made by a taker.
     pub is_taker: bool,
+    /// The price of the 'No' option in the fill.
     pub no_price: i64,
+    /// The identifier of the associated order.
     pub order_id: String,
+    /// The side (Yes/No) of the fill.
     pub side: Side,
+    /// The ticker of the market in which the fill occurred.
     pub ticker: String,
+    /// The unique identifier of the trade.
     pub trade_id: String,
+    /// The price of the 'Yes' option in the fill.
     pub yes_price: i64,
 }
 
+
+/// A settlement of a market position in the Kalshi exchange.
+///
+/// This struct provides details of a market settlement, including the result, quantities,
+/// costs involved, and the timestamp of settlement.
+///
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settlement {
+    /// The result of the market settlement.
     pub market_result: String,
+    /// The quantity involved in the 'No' position.
     pub no_count: i64,
+    /// The total cost associated with the 'No' position.
     pub no_total_cost: i64,
+    /// The revenue generated from the settlement, in cents.
     pub revenue: i64,
+    /// The timestamp when the settlement occurred.
     pub settled_time: String,
+    /// The ticker of the market that was settled.
     pub ticker: String,
+    /// The quantity involved in the 'Yes' position.
     pub yes_count: i64,
+    /// The total cost associated with the 'Yes' position, in cents.
     pub yes_total_cost: i64,
 }
 
+/// A user's position in a specific event on the Kalshi exchange.
+///
+/// Details the user's exposure, costs, profits, and the number of resting orders related to a particular event.
+///
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EventPosition {
+    /// The total exposure amount in the event.
     pub event_exposure: i64,
+    /// The ticker of the event.
     pub event_ticker: String,
+    /// The total fees paid in the event in cents.
     pub fees_paid: i64,
+    /// The realized profit or loss in the event in cents.
     pub realized_pnl: i64,
+    /// The count of resting (active but unfilled) orders in the event.
     pub resting_order_count: i32,
+    /// The total cost incurred in the event in cents.
     pub total_cost: i64,
 }
 
+
+/// A user's position in a specific market on the Kalshi exchange.
+///
+/// This struct includes details about the user's market position, including exposure, fees,
+/// profits, and the number of resting orders.
+///
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MarketPosition {
+    /// The total fees paid in the market in cents.
     pub fees_paid: i64,
+    /// The total exposure amount in the market.
     pub market_exposure: i64,
+    /// The current position of the user in the market.
     pub position: i32,
+    /// The realized profit or loss in the market in cents.
     pub realized_pnl: i64,
+    /// The count of resting orders in the market.
     pub resting_orders_count: i32,
+    /// The ticker of the market.
     pub ticker: String,
+    /// The total traded amount in the market.
     pub total_traded: i64,
 }
 
+
+/// The side of a market position in the Kalshi exchange.
+///
+/// This enum is used to indicate whether a market position, order, or trade is associated with the 'Yes' or 'No' outcome of a market event.
+///
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Side {
+    /// Represents a position, order, or trade associated with the 'Yes' outcome of a market event.
     Yes,
+    /// Represents a position, order, or trade associated with the 'No' outcome of a market event.
     No,
 }
 
+/// This enum is used to specify the type of action a user wants to take in an order, either buying or selling.
+///
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Action {
+    /// Represents a buy action.
     Buy,
+    /// Represents a sell action.
     Sell,
 }
 
@@ -546,12 +890,20 @@ impl fmt::Display for Action {
     }
 }
 
+/// The status of an order in the Kalshi exchange.
+///
+/// This enum categorizes an order's lifecycle state, from creation to completion or cancellation.
+///
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderStatus {
+    /// The order is active but not yet filled or partially filled and still in the order book.
     Resting,
+    /// The order has been canceled and is no longer active.
     Canceled,
+    /// The order has been fully executed.
     Executed,
+    /// The order has been created and is awaiting further processing.
     Pending,
 }
 
@@ -566,9 +918,15 @@ impl fmt::Display for OrderStatus {
     }
 }
 
+/// Defines the type of an order in the Kalshi exchange.
+///
+/// This enum is used to specify the nature of the order, particularly how it interacts with the market.
+///
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderType {
+    /// A market order is executed immediately at the current market price.
     Market,
+    /// A limit order is set to be executed at a specific price or better.
     Limit,
 }

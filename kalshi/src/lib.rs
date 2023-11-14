@@ -219,12 +219,24 @@ impl<'a> Kalshi<'a> {
 
 // GENERAL ENUMS
 // -----------------------------------------------
+
+/// Defines the trading environment for the Kalshi exchange.
+///
+/// This enum is used to specify whether the interaction with the Kalshi API should be in a demo (simulated) environment 
+/// or in the live market with real financial transactions.
+///
 pub enum TradingEnvironment {
+    /// The demo mode represents a simulated environment where trades do not involve real money.
+    /// This mode is typically used for testing and practice purposes.
     DemoMode,
+
+    /// The live market mode is the real trading environment where all transactions involve actual financial stakes.
+    /// Use this mode for actual trading activities with real money.
     LiveMarketMode,
 }
 
-// unit tests, absent at the moment. all test logic is handled in the test bot dir
+
+// unit tests, absent at the moment. all test logic is handled in the test bot dir / tests directory
 #[cfg(test)]
 mod tests {
 
