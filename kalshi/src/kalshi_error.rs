@@ -1,4 +1,3 @@
-
 use core::fmt;
 use std::error::Error;
 // CUSTOM ERROR STRUCTS + ENUMS
@@ -8,7 +7,7 @@ use std::error::Error;
 pub enum KalshiError {
     RequestError(RequestError),
     UserInputError(String),
-    InternalError(String)
+    InternalError(String),
 }
 
 impl fmt::Display for KalshiError {
@@ -31,7 +30,6 @@ impl Error for KalshiError {
     }
 }
 
-
 impl From<reqwest::Error> for KalshiError {
     fn from(err: reqwest::Error) -> Self {
         if err.is_decode() {
@@ -43,7 +41,9 @@ impl From<reqwest::Error> for KalshiError {
                 } else if status.is_server_error() {
                     KalshiError::RequestError(RequestError::ServerError(err))
                 } else {
-                    KalshiError::InternalError("Theoretically Impossible Error. Internal code 1".to_string())
+                    KalshiError::InternalError(
+                        "Theoretically Impossible Error. Internal code 1".to_string(),
+                    )
                 }
             } else {
                 KalshiError::RequestError(RequestError::ServerError(err))
@@ -51,18 +51,26 @@ impl From<reqwest::Error> for KalshiError {
         } else if err.is_body() || err.is_timeout() {
             KalshiError::RequestError(RequestError::ServerError(err))
         } else {
-            KalshiError::InternalError("Theoretically Impossible Error. Internal code 2".to_string())
+            KalshiError::InternalError(
+                "Theoretically Impossible Error. Internal code 2".to_string(),
+            )
         }
     }
 }
 
-
-
+/// Represents specific kinds of HTTP request errors encountered in the Kalshi module.
+///
+/// This enum categorizes errors related to HTTP requests, including serialization errors, client-side errors,
+/// and server-side errors.
+///
 #[derive(Debug)]
 pub enum RequestError {
+    /// Errors occurring during serialization or deserialization of request or response data.
     SerializationError(reqwest::Error),
+    /// Errors representing client-side request issues, such as bad requests or unauthorized access.
     ClientError(reqwest::Error),
-    ServerError(reqwest::Error)
+    /// Errors indicating server-side issues, like internal server errors or service unavailability.
+    ServerError(reqwest::Error),
 }
 
 impl fmt::Display for RequestError {
@@ -87,13 +95,12 @@ impl fmt::Display for RequestError {
     }
 }
 
-
 impl Error for RequestError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             RequestError::ClientError(e) => Some(e),
             RequestError::ServerError(e) => Some(e),
-            RequestError::SerializationError(e) => Some(e)
+            RequestError::SerializationError(e) => Some(e),
         }
     }
 }

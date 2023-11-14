@@ -47,7 +47,7 @@ async fn main() {
 
     kalshi_instance.login(&username, &password).await;
 
-    let new_york_ticker = "HIGHNY-23NOV06-T51".to_string();
+    let new_york_ticker = "HIGHNY-23NOV13-T51".to_string();
 
     let nytemp_market_data = kalshi_instance.get_single_market(&new_york_ticker).await.unwrap();
     
@@ -74,4 +74,7 @@ async fn main() {
     let ny_order_id = bought_order.order_id.clone();
     
     let cancelled_order = kalshi_instance.cancel_order(&ny_order_id).await.unwrap();
+    println!("{:?}", cancelled_order);
+
+    
 }

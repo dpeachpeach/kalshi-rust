@@ -11,15 +11,11 @@ macro_rules! add_param {
     };
 }
 
-// etc
+// Helper to build the base url 
 
 pub fn build_base_url(trading_env: TradingEnvironment) -> &'static str {
     match trading_env {
-        TradingEnvironment::LiveMarketMode => {
-            "https://trading-api.kalshi.com/trade-api/v2"
-        },
-        TradingEnvironment::DemoMode => {
-            "https://demo-api.kalshi.co/trade-api/v2"
-        }
+        TradingEnvironment::LiveMarketMode => "https://trading-api.kalshi.com/trade-api/v2",
+        TradingEnvironment::DemoMode => "https://demo-api.kalshi.co/trade-api/v2",
     }
 }

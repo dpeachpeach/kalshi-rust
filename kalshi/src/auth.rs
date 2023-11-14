@@ -1,12 +1,25 @@
-//! This module contains methods related to authentication. Logging in and Logging out.
-use crate::kalshi_error::*;
 use super::Kalshi;
+use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
-
-
 impl<'a> Kalshi<'a> {
-    /// This is a method in the auth module
+    /// Asynchronously logs a user into the Kalshi exchange.
+    ///
+    /// This method sends a POST request to the Kalshi exchange's login endpoint with the user's credentials.
+    /// On successful authentication, it updates the current session's token and member ID.
+    ///
+    /// # Arguments
+    /// * `user` - A string slice representing the user's email.
+    /// * `password` - A string slice representing the user's password.
+    ///
+    /// # Returns
+    /// - `Ok(())`: Empty result indicating successful login.
+    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    ///
+    /// # Example
+    /// ```
+    /// kalshi_instance.login("johndoe@example.com", "example_password").await?;
+    /// ```
     pub async fn login(&mut self, user: &str, password: &str) -> Result<(), KalshiError> {
         let login_url: &str = &format!("{}/login", self.base_url.to_string());
 
@@ -30,7 +43,19 @@ impl<'a> Kalshi<'a> {
         return Ok(());
     }
 
-    /// This is a method in the auth module
+    /// Asynchronously logs a user out of the Kalshi exchange.
+    ///
+    /// Sends a POST request to the Kalshi exchange's logout endpoint. This method
+    /// should be called to properly terminate the session initiated by `login`.
+    ///
+    /// # Returns
+    /// - `Ok(())`: Empty result indicating successful logout.
+    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request.
+    ///
+    /// # Examples
+    /// ```
+    /// kalshi_instance.logout().await?;
+    /// ```
     pub async fn logout(&self) -> Result<(), KalshiError> {
         let logout_url: &str = &format!("{}/logout", self.base_url.to_string());
 
