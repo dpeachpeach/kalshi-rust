@@ -5,6 +5,8 @@
 This is a wrapper for the [Kalshi](https://kalshi.com/) trading API written by and for those using Rust. 
 This wrapper is asynchronous and typically more performant than the official Python API provided by the developers, presented here: [*KalshiDevAPI*](https://github.com/Kalshi/kalshi-python).
 
+## Documentation
+Read the fully-featured docs [here](https://docs.rs/kalshi/0.9.0/kalshi/)
 
 ## Sample Bot
 
@@ -50,8 +52,6 @@ Every function present in the library wraps around the [Kalshi Trading API](http
 | **Market/GetMarketOrderBook** | Get a market's order book |✅         |
 | **Market/GetSeries** | Get data about a series |✅         |
 
-### Writing detailed docs:  🟡 
-I'm writing detailed docs + a user manual  to support a user's implementation of a Kalshi bot.
 
 
 
