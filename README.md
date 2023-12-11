@@ -37,7 +37,7 @@ Every function present in the library wraps around the [Kalshi Trading API](http
 | **Portfolio/GetOrders** | Get User's orders that fit certain criteria |  ✅       |
 | **Portfolio/CreateOrder** | Submit an Order |✅         |
 | **Portfolio/BatchCreateOrders** | Submit multiple Orders |❌          |
-| **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) |❌          |
+| **Portfolio/BatchCancelOrders** | Cancel Multiple Orders (Advanced Users Only) | ✅           |
 | **Portfolio/GetOrder** | Get a single Order | ✅          |
 | **Portfolio/CancelOrder** | Cancel an order |✅          |
 | **Portfolio/DecreaseOrder** | Decrease Order amount |✅          |
