@@ -2,10 +2,12 @@ use super::Kalshi;
 use crate::kalshi_error::*;
 use std::fmt;
 use uuid::Uuid;
+use std::sync::Arc;
+use tokio::task;
 
 use serde::{Deserialize, Serialize};
 
-impl<'a> Kalshi<'a> {
+impl<'a> Kalshi {
     /// Retrieves the current balance of the authenticated user from the Kalshi exchange.
     ///
     /// This method fetches the user's balance, requiring a valid authentication token. 
@@ -626,6 +628,38 @@ impl<'a> Kalshi<'a> {
 
         Ok(response.order)
     }
+
+    pub async fn batch_cancel_order(&mut self, batch: Vec<String>) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
+
+        let temp_instance = Arc::new(self.clone());
+        let mut futures = Vec::new();
+    
+        for order_id in batch {
+            let kalshi_ref = Arc::clone(&temp_instance);
+            let order_id = order_id.clone();  
+    
+            let future = task::spawn(async move {
+                kalshi_ref.cancel_order(&order_id).await
+            });
+            futures.push(future);
+        }
+
+        let mut outputs = Vec::new();
+
+        for future in futures {
+            match future.await {
+                Ok(result) => {
+                    outputs.push(result)
+                },
+                Err(e) => {
+                    return Err(KalshiError::UserInputError(format!("Join of concurrent requests failed, check input or message developer: {}", e)));
+                }
+            }
+
+        }
+        Ok(outputs)    
+    }  
+
 }
 
 // PRIVATE STRUCTS

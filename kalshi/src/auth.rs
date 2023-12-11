@@ -2,7 +2,7 @@ use super::Kalshi;
 use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
-impl<'a> Kalshi<'a> {
+impl<'a> Kalshi {
     /// Asynchronously logs a user into the Kalshi exchange.
     ///
     /// This method sends a POST request to the Kalshi exchange's login endpoint with the user's credentials.

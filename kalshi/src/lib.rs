@@ -11,7 +11,7 @@
 //! ## The Kalshi Struct
 //!
 //! The [Kalshi](Kalshi) struct is the central component of this crate.
-//! All authentication, order routing, market requests, and position snapshots are handled through the struct and it's methods.
+//! All authentication, order routing, market requests, and position snapshots are handled through the struct and its methods.
 //!
 //! For more details, see [Kalshi](Kalshi).
 //!
@@ -146,10 +146,10 @@ use reqwest;
 /// ```
 ///
 ///
-#[derive(Debug)]
-pub struct Kalshi<'a> {
+#[derive(Debug, Clone)]
+pub struct Kalshi {
     /// - `base_url`: The base URL for the API, determined by the trading environment.
-    base_url: &'a str,
+    base_url: String,
     /// - `curr_token`: A field for storing the current authentication token.
     curr_token: Option<String>,
     /// - `member_id`: A field for storing the member ID.
@@ -158,7 +158,7 @@ pub struct Kalshi<'a> {
     client: reqwest::Client,
 }
 
-impl<'a> Kalshi<'a> {
+impl Kalshi{
     /// Creates a new instance of Kalshi with the specified trading environment.
     /// This environment determines the base URL used for API requests.
     ///
@@ -177,12 +177,12 @@ impl<'a> Kalshi<'a> {
     /// ## Creating a Live Trading instance (Warning, you're using real money!)
     /// ```
     /// use kalshi::{Kalshi, TradingEnvironment};
-    /// let kalshi = Kalshi::new(TradingEnvironment::DemoMode);
+    /// let kalshi = Kalshi::new(TradingEnvironment::LiveMarketMode);
     /// ```
     ///
-    pub fn new(trading_env: TradingEnvironment) -> Kalshi<'a> {
+    pub fn new(trading_env: TradingEnvironment) -> Kalshi {
         return Kalshi {
-            base_url: utils::build_base_url(trading_env),
+            base_url: utils::build_base_url(trading_env).to_string(),
             curr_token: None,
             member_id: None,
             client: reqwest::Client::new(),

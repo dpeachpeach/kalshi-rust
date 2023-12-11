@@ -2,7 +2,7 @@ use super::Kalshi;
 use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
-impl<'a> Kalshi<'a> {
+impl Kalshi {
     /// Retrieves detailed information about a specific event from the Kalshi exchange.
     ///
     /// # Arguments

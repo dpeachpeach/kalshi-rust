@@ -2,7 +2,7 @@ use super::Kalshi;
 use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
-impl<'a> Kalshi<'a> {
+impl Kalshi {
     /// Asynchronously retrieves the current status of the exchange.
     ///
     /// This function makes an HTTP GET request to the Kalshi exchange status endpoint
