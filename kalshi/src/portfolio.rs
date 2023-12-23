@@ -636,7 +636,7 @@ impl<'a> Kalshi {
                         }
                     } else {
                         // Handle non-success HTTP status codes
-                        Err(KalshiError::InternalError(format!("HTTP Error: {}", resp.status())))
+                        Err(KalshiError::InternalError(format!("HTTP Error: {} {}", resp.status(), resp.text().await.unwrap())))
                     }
                 }
                 Err(_) => {
