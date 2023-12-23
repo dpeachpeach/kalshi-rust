@@ -615,18 +615,36 @@ impl<'a> Kalshi {
             yes_price: yes_price,
         };
 
-        let response: SingleOrderResponse = self
+        let response = self
             .client
             .post(order_url)
             .header("Authorization", self.curr_token.clone().unwrap())
             .header("content-type", "application/json".to_string())
             .json(&order_payload)
             .send()
-            .await?
-            .json()
-            .await?;
+            .await;
 
-        Ok(response.order)
+            match response {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        match resp.json::<SingleOrderResponse>().await {
+                            Ok(order_response) => Ok(order_response.order),
+                            Err(_) => {
+                                // Handle JSON decoding error
+                                Err(KalshiError::InternalError("Failed to decode JSON response".to_string()))
+                            }
+                        }
+                    } else {
+                        // Handle non-success HTTP status codes
+                        Err(KalshiError::InternalError(format!("HTTP Error: {}", resp.status())))
+                    }
+                }
+                Err(_) => {
+                    // Handle errors in sending the request
+                    Err(KalshiError::InternalError("Failed to send request".to_string()))
+                }
+            }
+            
     }
 
     pub async fn batch_cancel_order(&mut self, batch: Vec<String>) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
