@@ -629,19 +629,25 @@ impl<'a> Kalshi {
                     if resp.status().is_success() {
                         match resp.json::<SingleOrderResponse>().await {
                             Ok(order_response) => Ok(order_response.order),
-                            Err(_) => {
+                            Err(json_err) => {
                                 // Handle JSON decoding error
-                                Err(KalshiError::InternalError("Failed to decode JSON response".to_string()))
+                                let error_message = format!("Failed to decode JSON response: {}", json_err);
+                                eprintln!("{}", error_message);
+                                Err(KalshiError::InternalError(error_message))
                             }
                         }
                     } else {
                         // Handle non-success HTTP status codes
-                        Err(KalshiError::InternalError(format!("HTTP Error: {} {}", resp.status(), resp.text().await.unwrap())))
+                        let error_message = format!("HTTP Error: {}", resp.status());
+                        eprintln!("{}", error_message);
+                        Err(KalshiError::InternalError(error_message))
                     }
                 }
-                Err(_) => {
+                Err(request_err) => {
                     // Handle errors in sending the request
-                    Err(KalshiError::InternalError("Failed to send request".to_string()))
+                    let error_message = format!("Failed to send request: {}", request_err);
+                    eprintln!("{}", error_message);
+                    Err(KalshiError::InternalError(error_message))
                 }
             }
             
