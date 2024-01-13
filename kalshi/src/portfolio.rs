@@ -670,6 +670,7 @@ impl<'a> Kalshi {
 
         let mut outputs = Vec::new();
 
+        // TODO: improve error process for joining, I don't believe it's specific enough.
         for future in futures {
             match future.await {
                 Ok(result) => {
@@ -683,6 +684,11 @@ impl<'a> Kalshi {
         }
         Ok(outputs)    
     }  
+
+    pub async fn batch_create_order(&mut self, batch: Vec<OrderCreationField>) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
+        todo!()
+    }
+
 
 }
 
@@ -914,6 +920,68 @@ pub struct MarketPosition {
     pub total_traded: i64,
 }
 
+/// Represents the necessary fields for creating an order in the Kalshi exchange.
+/// 
+/// This struct is used to encapsulate all the data needed to create a new order. It includes details about the order type,
+/// the action being taken (buy/sell), the market ticker, and various other optional parameters that can be specified 
+/// to fine-tune the order according to the user's needs.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OrderCreationField {
+    /// The action (buy/sell) of the order.
+    pub action: Action,
+    /// Client-side identifier for the order. Optional.
+    pub client_order_id: Option<String>,
+    /// The number of contracts or shares involved in the order.
+    pub count: i32,
+    /// The side (Yes/No) of the order.
+    pub side: Side,
+    /// Ticker of the market associated with the order.
+    pub ticker: String,
+    /// Type of the order (e.g., market, limit).
+    pub input_type: OrderType,
+    /// The maximum cost the buyer is willing to incur for a 'buy' action. Optional.
+    pub buy_max_cost: Option<i64>,
+    /// Expiration time of the order. Optional.
+    pub expiration_ts: Option<i64>,
+    /// Price of the 'No' option in the order. Optional.
+    pub no_price: Option<i64>,
+    /// The minimum position the seller is willing to hold after selling. Optional.
+    pub sell_position_floor: Option<i32>,
+    /// Price of the 'Yes' option in the order. Optional.
+    pub yes_price: Option<i64>,
+}
+
+impl OrderParams for OrderCreationField {
+    fn get_params(self) -> (
+        Action, 
+        Option<String>, 
+        i32, 
+        Side, 
+        String, 
+        OrderType, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i32>, 
+        Option<i64>
+    ) {
+        (
+            self.action,
+            self.client_order_id,
+            self.count,
+            self.side,
+            self.ticker,
+            self.input_type,
+            self.buy_max_cost,
+            self.expiration_ts,
+            self.no_price,
+            self.sell_position_floor,
+            self.yes_price
+        )
+    }
+}
+
+
 
 /// The side of a market position in the Kalshi exchange.
 ///
@@ -987,4 +1055,51 @@ pub enum OrderType {
     Market,
     /// A limit order is set to be executed at a specific price or better.
     Limit,
+}
+
+
+trait OrderParams {
+    fn get_params(self) -> (
+        Action, 
+        Option<String>, 
+        i32, 
+        Side, 
+        String, 
+        OrderType, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i32>, 
+        Option<i64>
+    );
+}
+
+impl OrderParams for (Action, Option<String>, i32, Side, String, OrderType, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<i64>) {
+    fn get_params(self) -> (
+        Action, 
+        Option<String>, 
+        i32, 
+        Side, 
+        String, 
+        OrderType, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i64>, 
+        Option<i32>, 
+        Option<i64>
+    ) {
+        (
+            self.0,
+            self.1,
+            self.2,
+            self.3,
+            self.4,
+            self.5,
+            self.6,
+            self.7,
+            self.8,
+            self.9,
+            self.10
+        )
+    }
 }

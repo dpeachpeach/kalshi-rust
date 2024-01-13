@@ -18,6 +18,7 @@ pub enum KalshiError {
     UserInputError(String),
     /// Errors representing unexpected internal issues or situations that are not supposed to happen.
     InternalError(String),
+    // TODO: add error type specifically for joining threads together.
 }
 
 
