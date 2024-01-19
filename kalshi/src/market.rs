@@ -92,7 +92,7 @@ impl Kalshi {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Market>))`: A tuple containing an optional pagination cursor and a vector of `Market` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    /// 
+    ///
     /// # Example
     ///
     /// ```
@@ -165,7 +165,7 @@ impl Kalshi {
     /// # Returns
     /// - `Ok((Option<String>, Vec<Event>))`: A tuple containing an optional pagination cursor and a vector of `Event` objects on success.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    /// 
+    ///
     /// # Example
     ///
     /// ```
@@ -244,7 +244,7 @@ impl Kalshi {
     /// # Returns
     /// - `Ok(Orderbook)`: `Orderbook` object on successful retrieval.
     /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    /// 
+    ///
     /// # Example
     /// Returns an orderbook with a depth of 10 entries for some market.
     /// ```
@@ -669,7 +669,6 @@ pub struct Trade {
     pub created_time: String,
 }
 
-
 /// Possible outcomes of a market settlement on the Kalshi exchange.
 ///
 /// This enum represents the different results that can be assigned to a market
@@ -678,17 +677,17 @@ pub struct Trade {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SettlementResult {
-/// The outcome of the market is affirmative.
+    /// The outcome of the market is affirmative.
     Yes,
-/// The outcome of the market is negative.
+    /// The outcome of the market is negative.
     No,
-/// The market is voided, usually due to specific conditions not being met.
+    /// The market is voided, usually due to specific conditions not being met.
     #[serde(rename = "")]
     Void,
-/// All options in the market are settled as 'No'.
+    /// All options in the market are settled as 'No'.
     #[serde(rename = "all_no")]
     AllNo,
-/// All options in the market are settled as 'Yes'.
+    /// All options in the market are settled as 'Yes'.
     #[serde(rename = "all_yes")]
     AllYes,
 }
@@ -709,4 +708,3 @@ pub enum MarketStatus {
     /// The market has been settled, and the outcome is determined.
     Settled,
 }
-

@@ -5,8 +5,8 @@ use std::error::Error;
 
 /// A comprehensive set of errors that might occur in the Kalshi module.
 ///
-/// This enum encompasses various types of errors, including HTTP request errors, 
-/// user input errors, and internal errors. It provides a unified error type for 
+/// This enum encompasses various types of errors, including HTTP request errors,
+/// user input errors, and internal errors. It provides a unified error type for
 /// the entire Kalshi module.
 ///
 #[derive(Debug)]
@@ -20,7 +20,6 @@ pub enum KalshiError {
     InternalError(String),
     // TODO: add error type specifically for joining threads together.
 }
-
 
 impl fmt::Display for KalshiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

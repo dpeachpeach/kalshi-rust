@@ -12,7 +12,10 @@ repository = "https://github.com/dpeachpeach/kalshi-rust"
 keywords = ["finance", "trading", "kalshi", "bots"]
 readme = "README.md"
 
-
+[lib]
+# We would like to eventually turn this on, but the doctests require some clean-up.
+# See https://github.com/dpeachpeach/kalshi-rust/issues/7
+doctest = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,3 +24,6 @@ reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"]}
 uuid = { version = "1.5.0", features = ["v4", "fast-rng"]}
+
+[dev-dependencies]
+serde_json = "1.0.111"

@@ -1,16 +1,16 @@
 use super::Kalshi;
 use crate::kalshi_error::*;
 use std::fmt;
-use uuid::Uuid;
 use std::sync::Arc;
 use tokio::task;
+use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 impl<'a> Kalshi {
     /// Retrieves the current balance of the authenticated user from the Kalshi exchange.
     ///
-    /// This method fetches the user's balance, requiring a valid authentication token. 
+    /// This method fetches the user's balance, requiring a valid authentication token.
     /// If the user is not logged in or the token is missing, it returns an error.
     ///
     /// # Returns
@@ -49,7 +49,7 @@ impl<'a> Kalshi {
 
     /// Retrieves a list of orders from the Kalshi exchange based on specified criteria.
     ///
-    /// This method fetches multiple orders, allowing for filtering by ticker, event ticker, time range, 
+    /// This method fetches multiple orders, allowing for filtering by ticker, event ticker, time range,
     /// status, and pagination. A valid authentication token is required to access this information.
     /// If the user is not logged in or the token is missing, it returns an error.
     ///
@@ -65,7 +65,7 @@ impl<'a> Kalshi {
     ///
     /// # Returns
     ///
-    /// - `Ok((Option<String>, Vec<Order>))`: A tuple containing an optional pagination cursor 
+    /// - `Ok((Option<String>, Vec<Order>))`: A tuple containing an optional pagination cursor
     ///   and a vector of `Order` objects on successful retrieval.
     /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
     ///
@@ -126,7 +126,7 @@ impl<'a> Kalshi {
 
     /// Retrieves detailed information about a specific order from the Kalshi exchange.
     ///
-    /// This method fetches data for a single order identified by its order ID. A valid authentication token 
+    /// This method fetches data for a single order identified by its order ID. A valid authentication token
     /// is required to access this information. If the user is not logged in or the token is missing, it returns an error.
     ///
     /// # Arguments
@@ -173,8 +173,8 @@ impl<'a> Kalshi {
 
     /// Cancels an existing order on the Kalshi exchange.
     ///
-    /// This method cancels an order specified by its ID. A valid authentication token is 
-    /// required to perform this action. If the user is not logged in or the token is missing, 
+    /// This method cancels an order specified by its ID. A valid authentication token is
+    /// required to perform this action. If the user is not logged in or the token is missing,
     /// it returns an error.
     ///
     /// # Arguments
@@ -183,7 +183,7 @@ impl<'a> Kalshi {
     ///
     /// # Returns
     ///
-    /// - `Ok((Order, i32))`: A tuple containing the updated `Order` object after cancellation 
+    /// - `Ok((Order, i32))`: A tuple containing the updated `Order` object after cancellation
     ///   and an integer indicating the amount by which the order was reduced on successful cancellation.
     /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
     ///
@@ -221,9 +221,9 @@ impl<'a> Kalshi {
     }
     /// Decreases the size of an existing order on the Kalshi exchange.
     ///
-    /// This method allows reducing the size of an order either by specifying the amount to reduce 
-    /// (`reduce_by`) or setting a new target size (`reduce_to`). A valid authentication token is 
-    /// required for this operation. It's important to provide either `reduce_by` or `reduce_to`, 
+    /// This method allows reducing the size of an order either by specifying the amount to reduce
+    /// (`reduce_by`) or setting a new target size (`reduce_to`). A valid authentication token is
+    /// required for this operation. It's important to provide either `reduce_by` or `reduce_to`,
     /// but not both at the same time.
     ///
     /// # Arguments
@@ -235,7 +235,7 @@ impl<'a> Kalshi {
     /// # Returns
     ///
     /// - `Ok(Order)`: The updated `Order` object after decreasing the size.
-    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `reduce_by` and `reduce_to` are provided, 
+    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `reduce_by` and `reduce_to` are provided,
     ///   or if there is an issue with the request.
     ///
     /// # Example
@@ -316,7 +316,7 @@ impl<'a> Kalshi {
     ///
     /// # Returns
     ///
-    /// - `Ok((Option<String>, Vec<Fill>))`: A tuple containing an optional pagination cursor 
+    /// - `Ok((Option<String>, Vec<Fill>))`: A tuple containing an optional pagination cursor
     ///   and a vector of `Fill` objects on successful retrieval.
     /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
     ///
@@ -386,7 +386,7 @@ impl<'a> Kalshi {
     ///
     /// # Returns
     ///
-    /// - `Ok((Option<String>, Vec<Settlement>))`: A tuple containing an optional pagination cursor 
+    /// - `Ok((Option<String>, Vec<Settlement>))`: A tuple containing an optional pagination cursor
     ///   and a vector of `Settlement` objects on successful retrieval.
     /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
     ///
@@ -435,9 +435,9 @@ impl<'a> Kalshi {
 
     /// Retrieves the user's positions in events and markets from the Kalshi exchange.
     ///
-    /// This method fetches the user's positions, providing options for filtering by settlement status, 
-    /// specific ticker, and event ticker, as well as pagination using limit and cursor. A valid 
-    /// authentication token is required to access this information. If the user is not logged in 
+    /// This method fetches the user's positions, providing options for filtering by settlement status,
+    /// specific ticker, and event ticker, as well as pagination using limit and cursor. A valid
+    /// authentication token is required to access this information. If the user is not logged in
     /// or the token is missing, it returns an error.
     ///
     /// # Arguments
@@ -450,7 +450,7 @@ impl<'a> Kalshi {
     ///
     /// # Returns
     ///
-    /// - `Ok((Option<String>, Vec<EventPosition>, Vec<MarketPosition>))`: A tuple containing an optional pagination cursor, 
+    /// - `Ok((Option<String>, Vec<EventPosition>, Vec<MarketPosition>))`: A tuple containing an optional pagination cursor,
     ///   a vector of `EventPosition` objects, and a vector of `MarketPosition` objects on successful retrieval.
     /// - `Err(KalshiError)`: An error if the user is not authenticated or if there is an issue with the request.
     ///
@@ -510,8 +510,8 @@ impl<'a> Kalshi {
     /// Submits an order to the Kalshi exchange.
     ///
     /// This method allows placing an order in the market, requiring details such as action, count, side,
-    /// ticker, order type, and other optional parameters. A valid authentication token is 
-    /// required for this operation. Note that for limit orders, either `no_price` or `yes_price` must be provided, 
+    /// ticker, order type, and other optional parameters. A valid authentication token is
+    /// required for this operation. Note that for limit orders, either `no_price` or `yes_price` must be provided,
     /// but not both.
     ///
     /// # Arguments
@@ -531,7 +531,7 @@ impl<'a> Kalshi {
     /// # Returns
     ///
     /// - `Ok(Order)`: The created `Order` object on successful placement.
-    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `no_price` and `yes_price` are provided for limit orders, 
+    /// - `Err(KalshiError)`: An error if the user is not authenticated, if both `no_price` and `yes_price` are provided for limit orders,
     ///   or if there is an issue with the request.
     ///
     /// # Example
@@ -624,47 +624,47 @@ impl<'a> Kalshi {
             .send()
             .await;
 
-            match response {
-                Ok(resp) => {
-                    if resp.status().is_success() {
-                        match resp.json::<SingleOrderResponse>().await {
-                            Ok(order_response) => Ok(order_response.order),
-                            Err(json_err) => {
-                                // Handle JSON decoding error
-                                let error_message = format!("Failed to decode JSON response: {}", json_err);
-                                eprintln!("{}", error_message);
-                                Err(KalshiError::InternalError(error_message))
-                            }
+        match response {
+            Ok(resp) => {
+                if resp.status().is_success() {
+                    match resp.json::<SingleOrderResponse>().await {
+                        Ok(order_response) => Ok(order_response.order),
+                        Err(json_err) => {
+                            // Handle JSON decoding error
+                            let error_message =
+                                format!("Failed to decode JSON response: {}", json_err);
+                            eprintln!("{}", error_message);
+                            Err(KalshiError::InternalError(error_message))
                         }
-                    } else {
-                        // Handle non-success HTTP status codes
-                        let error_message = format!("HTTP Error: {}", resp.status());
-                        eprintln!("{}", error_message);
-                        Err(KalshiError::InternalError(error_message))
                     }
-                }
-                Err(request_err) => {
-                    // Handle errors in sending the request
-                    let error_message = format!("Failed to send request: {}", request_err);
+                } else {
+                    // Handle non-success HTTP status codes
+                    let error_message = format!("HTTP Error: {}", resp.status());
                     eprintln!("{}", error_message);
                     Err(KalshiError::InternalError(error_message))
                 }
             }
-            
+            Err(request_err) => {
+                // Handle errors in sending the request
+                let error_message = format!("Failed to send request: {}", request_err);
+                eprintln!("{}", error_message);
+                Err(KalshiError::InternalError(error_message))
+            }
+        }
     }
 
-    pub async fn batch_cancel_order(&mut self, batch: Vec<String>) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
-
+    pub async fn batch_cancel_order(
+        &mut self,
+        batch: Vec<String>,
+    ) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
         let temp_instance = Arc::new(self.clone());
         let mut futures = Vec::new();
-    
+
         for order_id in batch {
             let kalshi_ref = Arc::clone(&temp_instance);
-            let order_id = order_id.clone();  
-    
-            let future = task::spawn(async move {
-                kalshi_ref.cancel_order(&order_id).await
-            });
+            let order_id = order_id.clone();
+
+            let future = task::spawn(async move { kalshi_ref.cancel_order(&order_id).await });
             futures.push(future);
         }
 
@@ -673,23 +673,24 @@ impl<'a> Kalshi {
         // TODO: improve error process for joining, I don't believe it's specific enough.
         for future in futures {
             match future.await {
-                Ok(result) => {
-                    outputs.push(result)
-                },
+                Ok(result) => outputs.push(result),
                 Err(e) => {
-                    return Err(KalshiError::UserInputError(format!("Join of concurrent requests failed, check input or message developer: {}", e)));
+                    return Err(KalshiError::UserInputError(format!(
+                        "Join of concurrent requests failed, check input or message developer: {}",
+                        e
+                    )));
                 }
             }
-
         }
-        Ok(outputs)    
-    }  
-
-    pub async fn batch_create_order(&mut self, batch: Vec<OrderCreationField>) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
-        todo!()
+        Ok(outputs)
     }
 
-
+    pub async fn batch_create_order(
+        &mut self,
+        batch: Vec<OrderCreationField>,
+    ) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
+        todo!()
+    }
 }
 
 // PRIVATE STRUCTS
@@ -707,7 +708,20 @@ struct SingleOrderResponse {
 #[derive(Debug, Deserialize, Serialize)]
 struct MultipleOrderResponse {
     orders: Vec<Order>,
+    #[serde(deserialize_with = "empty_string_is_none")]
     cursor: Option<String>,
+}
+
+fn empty_string_is_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    if s.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(s))
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -820,7 +834,6 @@ pub struct Order {
     pub order_group_id: String,
 }
 
-
 /// A completed transaction (a 'fill') in the Kalshi exchange.
 ///
 /// This struct details a single fill instance, including the action taken, the quantity,
@@ -849,7 +862,6 @@ pub struct Fill {
     /// The price of the 'Yes' option in the fill.
     pub yes_price: i64,
 }
-
 
 /// A settlement of a market position in the Kalshi exchange.
 ///
@@ -896,7 +908,6 @@ pub struct EventPosition {
     pub total_cost: i64,
 }
 
-
 /// A user's position in a specific market on the Kalshi exchange.
 ///
 /// This struct includes details about the user's market position, including exposure, fees,
@@ -921,9 +932,9 @@ pub struct MarketPosition {
 }
 
 /// Represents the necessary fields for creating an order in the Kalshi exchange.
-/// 
+///
 /// This struct is used to encapsulate all the data needed to create a new order. It includes details about the order type,
-/// the action being taken (buy/sell), the market ticker, and various other optional parameters that can be specified 
+/// the action being taken (buy/sell), the market ticker, and various other optional parameters that can be specified
 /// to fine-tune the order according to the user's needs.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OrderCreationField {
@@ -952,18 +963,20 @@ pub struct OrderCreationField {
 }
 
 impl OrderParams for OrderCreationField {
-    fn get_params(self) -> (
-        Action, 
-        Option<String>, 
-        i32, 
-        Side, 
-        String, 
-        OrderType, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i32>, 
-        Option<i64>
+    fn get_params(
+        self,
+    ) -> (
+        Action,
+        Option<String>,
+        i32,
+        Side,
+        String,
+        OrderType,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<i64>,
     ) {
         (
             self.action,
@@ -976,12 +989,10 @@ impl OrderParams for OrderCreationField {
             self.expiration_ts,
             self.no_price,
             self.sell_position_floor,
-            self.yes_price
+            self.yes_price,
         )
     }
 }
-
-
 
 /// The side of a market position in the Kalshi exchange.
 ///
@@ -1057,49 +1068,70 @@ pub enum OrderType {
     Limit,
 }
 
-
 trait OrderParams {
-    fn get_params(self) -> (
-        Action, 
-        Option<String>, 
-        i32, 
-        Side, 
-        String, 
-        OrderType, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i32>, 
-        Option<i64>
+    fn get_params(
+        self,
+    ) -> (
+        Action,
+        Option<String>,
+        i32,
+        Side,
+        String,
+        OrderType,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<i64>,
     );
 }
 
-impl OrderParams for (Action, Option<String>, i32, Side, String, OrderType, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<i64>) {
-    fn get_params(self) -> (
-        Action, 
-        Option<String>, 
-        i32, 
-        Side, 
-        String, 
-        OrderType, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i64>, 
-        Option<i32>, 
-        Option<i64>
+impl OrderParams
+    for (
+        Action,
+        Option<String>,
+        i32,
+        Side,
+        String,
+        OrderType,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<i64>,
+    )
+{
+    fn get_params(
+        self,
+    ) -> (
+        Action,
+        Option<String>,
+        i32,
+        Side,
+        String,
+        OrderType,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<i64>,
     ) {
         (
-            self.0,
-            self.1,
-            self.2,
-            self.3,
-            self.4,
-            self.5,
-            self.6,
-            self.7,
-            self.8,
-            self.9,
-            self.10
+            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7, self.8, self.9, self.10,
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::portfolio::MultipleOrderResponse;
+
+    #[test]
+    fn test_serialize_multiple_order_response() -> serde_json::Result<()> {
+        let json = r#"{"orders":[],"cursor":""}"#;
+        let result = serde_json::from_str::<MultipleOrderResponse>(json)?;
+        assert!(result.orders.is_empty());
+        assert!(result.cursor.is_none());
+        Ok(())
     }
 }
