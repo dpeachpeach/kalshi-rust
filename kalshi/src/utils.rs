@@ -11,7 +11,7 @@ macro_rules! add_param {
     };
 }
 
-// Helper to build the base url 
+// Helper to build the base url
 
 pub fn build_base_url(trading_env: TradingEnvironment) -> &'static str {
     match trading_env {

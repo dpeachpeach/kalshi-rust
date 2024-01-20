@@ -58,7 +58,7 @@
 //!
 //! ```
 //! let new_york_ticker = "HIGHNY-23NOV13-T51".to_string();
-//! 
+//!
 //! let bought_order = kalshi_instance
 //!     .create_order(
 //!     kalshi::Action::Buy,
@@ -73,7 +73,7 @@
 //!     None,
 //!     Some(5)).await.unwrap();
 //! ```
-//! 
+//!
 //! Refer to the rest of the documentation for details on all other methods!
 //! All methods found in the [kalshi API documentation](https://trading-api.readme.io/reference/getting-started) are wrapped around in this crate.
 //!
@@ -158,7 +158,7 @@ pub struct Kalshi {
     client: reqwest::Client,
 }
 
-impl Kalshi{
+impl Kalshi {
     /// Creates a new instance of Kalshi with the specified trading environment.
     /// This environment determines the base URL used for API requests.
     ///
@@ -222,7 +222,7 @@ impl Kalshi{
 
 /// Defines the trading environment for the Kalshi exchange.
 ///
-/// This enum is used to specify whether the interaction with the Kalshi API should be in a demo (simulated) environment 
+/// This enum is used to specify whether the interaction with the Kalshi API should be in a demo (simulated) environment
 /// or in the live market with real financial transactions.
 ///
 pub enum TradingEnvironment {
@@ -233,16 +233,4 @@ pub enum TradingEnvironment {
     /// The live market mode is the real trading environment where all transactions involve actual financial stakes.
     /// Use this mode for actual trading activities with real money.
     LiveMarketMode,
-}
-
-
-// unit tests, absent at the moment. all test logic is handled in the test bot dir / tests directory
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn it_works() {
-        let result = 4;
-        assert_eq!(result, 4);
-    }
 }
