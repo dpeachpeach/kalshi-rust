@@ -20,12 +20,12 @@ impl<'a> Kalshi {
     /// ```
     /// kalshi_instance.login("johndoe@example.com", "example_password").await?;
     /// ```
-    pub async fn login(&mut self, user: &str, password: &str) -> Result<(), KalshiError> {
-        let login_url: &str = &format!("{}/login", self.base_url.to_string());
+    pub async fn login(&mut self, user: String, password: String) -> Result<(), KalshiError> {
+        let login_url = format!("{}/login", self.base_url);
 
         let login_payload = LoginPayload {
-            email: user.to_string(),
-            password: password.to_string(),
+            email: user,
+            password,
         };
 
         let result: LoginResponse = self
