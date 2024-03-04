@@ -555,6 +555,8 @@ impl<'a> Kalshi {
     /// ).await.unwrap();
     /// ```
     ///
+    
+    // todo: rewrite using generics
     pub async fn create_order(
         &self,
         action: Action,
