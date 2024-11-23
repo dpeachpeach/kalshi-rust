@@ -1,8 +1,8 @@
 use super::Kalshi;
-use crate::kalshi_error::*;
+use crate::{kalshi_error::*, LoggedIn};
 use serde::{Deserialize, Serialize};
 
-impl Kalshi {
+impl<State> Kalshi<State> {
     /// Retrieves detailed information about a specific event from the Kalshi exchange.
     ///
     /// # Arguments
@@ -23,8 +23,7 @@ impl Kalshi {
         event_ticker: &String,
         with_nested_markets: Option<bool>,
     ) -> Result<Event, KalshiError> {
-        let single_event_url: &str =
-            &format!("{}/events/{}", self.base_url.to_string(), event_ticker);
+        let single_event_url: &str = &format!("{}/events/{}", self.base_url, event_ticker);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(2);
 
@@ -44,7 +43,7 @@ impl Kalshi {
             .json()
             .await?;
 
-        return Ok(result.event);
+        Ok(result.event)
     }
 
     /// Retrieves detailed information about a specific market from the Kalshi exchange.
@@ -62,7 +61,7 @@ impl Kalshi {
     /// let market = kalshi_instance.get_single_event(market_ticker).await.unwrap();
     /// ```
     pub async fn get_single_market(&self, ticker: &String) -> Result<Market, KalshiError> {
-        let single_market_url: &str = &format!("{}/markets/{}", self.base_url.to_string(), ticker);
+        let single_market_url: &str = &format!("{}/markets/{}", self.base_url, ticker);
 
         let result: SingleMarketResponse = self
             .client
@@ -72,8 +71,150 @@ impl Kalshi {
             .json()
             .await?;
 
-        return Ok(result.market);
+        Ok(result.market)
     }
+
+    /// Asynchronously retrieves information about multiple events from the Kalshi exchange.
+    ///
+    /// This method fetches data for multiple events, with optional filtering based on status,
+    /// series ticker, and whether nested market data should be included. It supports pagination
+    /// and time-based filtering.
+    ///
+    /// # Arguments
+    /// * `limit` - An optional integer to limit the number of events returned.
+    /// * `cursor` - An optional string for pagination cursor.
+    /// * `status` - An optional string to filter events by their status.
+    /// * `series_ticker` - An optional string to filter events by series ticker.
+    /// * `with_nested_markets` - An optional boolean to include nested market data.
+    ///
+    /// # Returns
+    /// - `Ok((Option<String>, Vec<Event>))`: A tuple containing an optional pagination cursor and a vector of `Event` objects on success.
+    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let events_result = kalshi_instance.get_multiple_events(
+    ///     Some(10),
+    ///     None,
+    ///     Some("active"),
+    ///     None,
+    ///     Some(true)
+    /// ).await.unwrap();
+    /// println!("Events: {:?}", events_result);
+    /// ```
+    ///
+    pub async fn get_multiple_events(
+        &self,
+        limit: Option<i64>,
+        cursor: Option<String>,
+        status: Option<String>,
+        series_ticker: Option<String>,
+        with_nested_markets: Option<bool>,
+    ) -> Result<(Option<String>, Vec<Event>), KalshiError> {
+        let events_url: &str = &format!("{}/events", self.base_url);
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "status", status);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "series_ticker", series_ticker);
+        add_param!(params, "with_nested_markets", with_nested_markets);
+
+        let events_url =
+            reqwest::Url::parse_with_params(events_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PublicEventsResponse = self.client.get(events_url).send().await?.json().await?;
+
+        Ok((result.cursor, result.events))
+    }
+    /// Asynchronously retrieves detailed information about a specific series from the Kalshi exchange.
+    ///
+    /// This method fetches data for a series identified by its ticker. The series data includes
+    /// information such as frequency, title, category, settlement sources, and related contract URLs.
+    ///
+    /// # Arguments
+    /// * `ticker` - A reference to a string representing the series's ticker.
+    ///
+    /// # Returns
+    /// - `Ok(Series)`: `Series` object on successful retrieval.
+    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// # Example
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let series_ticker = "some_series_ticker";
+    /// let series = kalshi_instance.get_series(series_ticker).await.unwrap();
+    /// ```
+    pub async fn get_series(&self, ticker: &String) -> Result<Series, KalshiError> {
+        let series_url: &str = &format!("{}/series/{}", self.base_url, ticker);
+
+        let result: SeriesResponse = self.client.get(series_url).send().await?.json().await?;
+
+        Ok(result.series)
+    }
+
+    /// Asynchronously retrieves trade data from the Kalshi exchange.
+    ///
+    /// This method fetches data about trades that have occurred, including details like trade ID,
+    /// taker side, ticker, and executed prices. It supports filtering based on various parameters
+    /// such as time, ticker, and pagination options.
+    ///
+    /// # Arguments
+    /// * `cursor` - An optional string for pagination cursor.
+    /// * `limit` - An optional integer to limit the number of trades returned.
+    /// * `ticker` - An optional string representing the market's ticker for which trades are to be fetched.
+    /// * `min_ts` - An optional timestamp to specify the minimum time for trade records.
+    /// * `max_ts` - An optional timestamp to specify the maximum time for trade records.
+    ///
+    /// # Returns
+    /// - `Ok((Option<String>, Vec<Trade>))`: A tuple containing an optional pagination cursor and a vector of `Trade` objects on success.
+    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
+    /// ```
+    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
+    /// let trades = kalshi_instance.get_trades(
+    ///     None,
+    ///     Some(10),
+    ///     Some("ticker_name"),
+    ///     None,
+    ///     None
+    /// ).await.unwrap();
+    /// ```
+    pub async fn get_trades(
+        &self,
+        cursor: Option<String>,
+        limit: Option<i32>,
+        ticker: Option<String>,
+        min_ts: Option<i64>,
+        max_ts: Option<i64>,
+    ) -> Result<(Option<String>, Vec<Trade>), KalshiError> {
+        let trades_url: &str = &format!("{}/markets/trades", self.base_url);
+
+        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
+
+        add_param!(params, "limit", limit);
+        add_param!(params, "cursor", cursor);
+        add_param!(params, "min_ts", min_ts);
+        add_param!(params, "max_ts", max_ts);
+        add_param!(params, "ticker", ticker);
+
+        let trades_url =
+            reqwest::Url::parse_with_params(trades_url, &params).unwrap_or_else(|err| {
+                eprintln!("{:?}", err);
+                panic!("Internal Parse Error, please contact developer!");
+            });
+
+        let result: PublicTradesResponse = self.client.get(trades_url).send().await?.json().await?;
+
+        Ok((result.cursor, result.trades))
+    }
+}
+
+impl Kalshi<LoggedIn> {
     /// Asynchronously retrieves information about multiple markets from the Kalshi exchange.
     ///
     /// This method fetches data for a collection of markets, filtered by various optional parameters.
@@ -119,7 +260,7 @@ impl Kalshi {
         status: Option<String>,
         tickers: Option<String>,
     ) -> Result<(Option<String>, Vec<Market>), KalshiError> {
-        let markets_url: &str = &format!("{}/markets", self.base_url.to_string());
+        let markets_url: &str = &format!("{}/markets", self.base_url);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(10);
 
@@ -141,96 +282,13 @@ impl Kalshi {
         let result: PublicMarketsResponse = self
             .client
             .get(markets_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
         Ok((result.cursor, result.markets))
-    }
-    /// Asynchronously retrieves information about multiple events from the Kalshi exchange.
-    ///
-    /// This method fetches data for multiple events, with optional filtering based on status,
-    /// series ticker, and whether nested market data should be included. It supports pagination
-    /// and time-based filtering.
-    ///
-    /// # Arguments
-    /// * `limit` - An optional integer to limit the number of events returned.
-    /// * `cursor` - An optional string for pagination cursor.
-    /// * `status` - An optional string to filter events by their status.
-    /// * `series_ticker` - An optional string to filter events by series ticker.
-    /// * `with_nested_markets` - An optional boolean to include nested market data.
-    ///
-    /// # Returns
-    /// - `Ok((Option<String>, Vec<Event>))`: A tuple containing an optional pagination cursor and a vector of `Event` objects on success.
-    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
-    /// let events_result = kalshi_instance.get_multiple_events(
-    ///     Some(10),
-    ///     None,
-    ///     Some("active"),
-    ///     None,
-    ///     Some(true)
-    /// ).await.unwrap();
-    /// println!("Events: {:?}", events_result);
-    /// ```
-    ///
-    pub async fn get_multiple_events(
-        &self,
-        limit: Option<i64>,
-        cursor: Option<String>,
-        status: Option<String>,
-        series_ticker: Option<String>,
-        with_nested_markets: Option<bool>,
-    ) -> Result<(Option<String>, Vec<Event>), KalshiError> {
-        let events_url: &str = &format!("{}/events", self.base_url.to_string());
-
-        let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
-
-        add_param!(params, "limit", limit);
-        add_param!(params, "status", status);
-        add_param!(params, "cursor", cursor);
-        add_param!(params, "series_ticker", series_ticker);
-        add_param!(params, "with_nested_markets", with_nested_markets);
-
-        let events_url =
-            reqwest::Url::parse_with_params(events_url, &params).unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                panic!("Internal Parse Error, please contact developer!");
-            });
-
-        let result: PublicEventsResponse = self.client.get(events_url).send().await?.json().await?;
-
-        return Ok((result.cursor, result.events));
-    }
-    /// Asynchronously retrieves detailed information about a specific series from the Kalshi exchange.
-    ///
-    /// This method fetches data for a series identified by its ticker. The series data includes
-    /// information such as frequency, title, category, settlement sources, and related contract URLs.
-    ///
-    /// # Arguments
-    /// * `ticker` - A reference to a string representing the series's ticker.
-    ///
-    /// # Returns
-    /// - `Ok(Series)`: `Series` object on successful retrieval.
-    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    /// # Example
-    /// ```
-    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
-    /// let series_ticker = "some_series_ticker";
-    /// let series = kalshi_instance.get_series(series_ticker).await.unwrap();
-    /// ```
-    pub async fn get_series(&self, ticker: &String) -> Result<Series, KalshiError> {
-        let series_url: &str = &format!("{}/series/{}", self.base_url.to_string(), ticker);
-
-        let result: SeriesResponse = self.client.get(series_url).send().await?.json().await?;
-
-        return Ok(result.series);
     }
     /// Asynchronously retrieves the order book for a specific market in the Kalshi exchange.
     ///
@@ -257,8 +315,7 @@ impl Kalshi {
         ticker: &String,
         depth: Option<i32>,
     ) -> Result<Orderbook, KalshiError> {
-        let orderbook_url: &str =
-            &format!("{}/markets/{}/orderbook", self.base_url.to_string(), ticker);
+        let orderbook_url: &str = &format!("{}/markets/{}/orderbook", self.base_url, ticker);
 
         let mut params: Vec<(&str, String)> = Vec::new();
 
@@ -273,13 +330,13 @@ impl Kalshi {
         let result: OrderBookResponse = self
             .client
             .get(orderbook_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok(result.orderbook);
+        Ok(result.orderbook)
     }
 
     /// Asynchronously retrieves the market history for a given market on the Kalshi exchange.
@@ -318,8 +375,7 @@ impl Kalshi {
         min_ts: Option<i64>,
         max_ts: Option<i64>,
     ) -> Result<(Option<String>, Vec<Snapshot>), KalshiError> {
-        let market_history_url: &str =
-            &format! {"{}/markets/{}/history", self.base_url.to_string(), ticker};
+        let market_history_url: &str = &format! {"{}/markets/{}/history", self.base_url, ticker};
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(5);
 
@@ -337,68 +393,13 @@ impl Kalshi {
         let result: MarketHistoryResponse = self
             .client
             .get(market_history_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
         Ok((result.cursor, result.history))
-    }
-
-    /// Asynchronously retrieves trade data from the Kalshi exchange.
-    ///
-    /// This method fetches data about trades that have occurred, including details like trade ID,
-    /// taker side, ticker, and executed prices. It supports filtering based on various parameters
-    /// such as time, ticker, and pagination options.
-    ///
-    /// # Arguments
-    /// * `cursor` - An optional string for pagination cursor.
-    /// * `limit` - An optional integer to limit the number of trades returned.
-    /// * `ticker` - An optional string representing the market's ticker for which trades are to be fetched.
-    /// * `min_ts` - An optional timestamp to specify the minimum time for trade records.
-    /// * `max_ts` - An optional timestamp to specify the maximum time for trade records.
-    ///
-    /// # Returns
-    /// - `Ok((Option<String>, Vec<Trade>))`: A tuple containing an optional pagination cursor and a vector of `Trade` objects on success.
-    /// - `Err(KalshiError)`: Error in case of a failure in the HTTP request or response parsing.
-    /// ```
-    /// // Assuming `kalshi_instance` is an already authenticated instance of `Kalshi`
-    /// let trades = kalshi_instance.get_trades(
-    ///     None,
-    ///     Some(10),
-    ///     Some("ticker_name"),
-    ///     None,
-    ///     None
-    /// ).await.unwrap();
-    /// ```
-    pub async fn get_trades(
-        &self,
-        cursor: Option<String>,
-        limit: Option<i32>,
-        ticker: Option<String>,
-        min_ts: Option<i64>,
-        max_ts: Option<i64>,
-    ) -> Result<(Option<String>, Vec<Trade>), KalshiError> {
-        let trades_url: &str = &format!("{}/markets/trades", self.base_url.to_string());
-
-        let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
-
-        add_param!(params, "limit", limit);
-        add_param!(params, "cursor", cursor);
-        add_param!(params, "min_ts", min_ts);
-        add_param!(params, "max_ts", max_ts);
-        add_param!(params, "ticker", ticker);
-
-        let trades_url =
-            reqwest::Url::parse_with_params(trades_url, &params).unwrap_or_else(|err| {
-                eprintln!("{:?}", err);
-                panic!("Internal Parse Error, please contact developer!");
-            });
-
-        let result: PublicTradesResponse = self.client.get(trades_url).send().await?.json().await?;
-
-        Ok((result.cursor, result.trades))
     }
 }
 

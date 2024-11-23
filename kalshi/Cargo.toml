@@ -1,6 +1,6 @@
 [package]
 name = "kalshi"
-version = "0.9.0"
+version = "0.10.0"
 authors = ["David Petre <david.petre31@gmail.com>"]
 edition = "2021"
 rust-version = "1.72"
@@ -22,8 +22,8 @@ doctest = false
 [dependencies]
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0", features = ["derive"]}
-uuid = { version = "1.5.0", features = ["v4", "fast-rng"]}
+serde = { version = "1.0", features = ["derive"] }
+uuid = { version = "1.5.0", features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 serde_json = "1.0.111"

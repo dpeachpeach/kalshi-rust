@@ -1,5 +1,5 @@
 use super::Kalshi;
-use crate::kalshi_error::*;
+use crate::{kalshi_error::*, LoggedIn};
 use std::fmt;
 use std::sync::Arc;
 use tokio::task;
@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-impl<'a> Kalshi {
+impl<'a> Kalshi<LoggedIn> {
     /// Retrieves the current balance of the authenticated user from the Kalshi exchange.
     ///
     /// This method fetches the user's balance, requiring a valid authentication token.
@@ -26,19 +26,12 @@ impl<'a> Kalshi {
     /// ```
     ///
     pub async fn get_balance(&self) -> Result<i64, KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-
-        let balance_url: &str = &format!("{}/portfolio/balance", self.base_url.to_string());
+        let balance_url: &str = &format!("{}/portfolio/balance", self.base_url);
 
         let result: BalanceResponse = self
             .client
             .get(balance_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
@@ -88,13 +81,7 @@ impl<'a> Kalshi {
         limit: Option<i32>,
         cursor: Option<String>,
     ) -> Result<(Option<String>, Vec<Order>), KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+        let user_orders_url: &str = &format!("{}/portfolio/orders", self.base_url);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
 
@@ -115,13 +102,13 @@ impl<'a> Kalshi {
         let result: MultipleOrderResponse = self
             .client
             .get(user_orders_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok((result.cursor, result.orders));
+        Ok((result.cursor, result.orders))
     }
 
     /// Retrieves detailed information about a specific order from the Kalshi exchange.
@@ -147,28 +134,18 @@ impl<'a> Kalshi {
     /// ```
     ///
     pub async fn get_single_order(&self, order_id: &String) -> Result<Order, KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let user_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
+        let user_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url, order_id);
 
         let result: SingleOrderResponse = self
             .client
             .get(user_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok(result.order);
+        Ok(result.order)
     }
 
     /// Cancels an existing order on the Kalshi exchange.
@@ -196,22 +173,12 @@ impl<'a> Kalshi {
     /// ```
     ///
     pub async fn cancel_order(&self, order_id: &str) -> Result<(Order, i32), KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let cancel_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
+        let cancel_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url, order_id);
 
         let result: DeleteOrderResponse = self
             .client
             .delete(cancel_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
@@ -252,17 +219,7 @@ impl<'a> Kalshi {
         reduce_by: Option<i32>,
         reduce_to: Option<i32>,
     ) -> Result<Order, KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let decrease_order_url: &str = &format!(
-            "{}/portfolio/orders/{}",
-            self.base_url.to_string(),
-            order_id
-        );
+        let decrease_order_url: &str = &format!("{}/portfolio/orders/{}", self.base_url, order_id);
 
         match (reduce_by, reduce_to) {
             (Some(_), Some(_)) => {
@@ -281,14 +238,14 @@ impl<'a> Kalshi {
         }
 
         let decrease_payload = DecreaseOrderPayload {
-            reduce_by: reduce_by,
-            reduce_to: reduce_to,
+            reduce_by,
+            reduce_to,
         };
 
         let result: SingleOrderResponse = self
             .client
             .post(decrease_order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .header("content-type", "application/json".to_string())
             .json(&decrease_payload)
             .send()
@@ -338,13 +295,7 @@ impl<'a> Kalshi {
         limit: Option<i32>,
         cursor: Option<String>,
     ) -> Result<(Option<String>, Vec<Fill>), KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url.to_string());
+        let user_fills_url: &str = &format!("{}/portfolio/fills", self.base_url);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(7);
 
@@ -364,13 +315,13 @@ impl<'a> Kalshi {
         let result: MultipleFillsResponse = self
             .client
             .get(user_fills_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
             .await?;
 
-        return Ok((result.cursor, result.fills));
+        Ok((result.cursor, result.fills))
     }
 
     /// Retrieves a list of portfolio settlements from the Kalshi exchange.
@@ -402,13 +353,7 @@ impl<'a> Kalshi {
         limit: Option<i64>,
         cursor: Option<String>,
     ) -> Result<(Option<String>, Vec<Settlement>), KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let settlements_url: &str = &format!("{}/portfolio/settlements", self.base_url.to_string());
+        let settlements_url: &str = &format!("{}/portfolio/settlements", self.base_url);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
 
@@ -424,7 +369,7 @@ impl<'a> Kalshi {
         let result: PortfolioSettlementResponse = self
             .client
             .get(settlements_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
@@ -469,13 +414,7 @@ impl<'a> Kalshi {
         ticker: Option<String>,
         event_ticker: Option<String>,
     ) -> Result<(Option<String>, Vec<EventPosition>, Vec<MarketPosition>), KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let positions_url: &str = &format!("{}/portfolio/positions", self.base_url.to_string());
+        let positions_url: &str = &format!("{}/portfolio/positions", self.base_url);
 
         let mut params: Vec<(&str, String)> = Vec::with_capacity(6);
 
@@ -494,7 +433,7 @@ impl<'a> Kalshi {
         let result: GetPositionsResponse = self
             .client
             .get(positions_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .send()
             .await?
             .json()
@@ -555,7 +494,7 @@ impl<'a> Kalshi {
     /// ).await.unwrap();
     /// ```
     ///
-    
+
     // todo: rewrite using generics
     pub async fn create_order(
         &self,
@@ -571,16 +510,10 @@ impl<'a> Kalshi {
         sell_position_floor: Option<i32>,
         yes_price: Option<i64>,
     ) -> Result<Order, KalshiError> {
-        if self.curr_token == None {
-            return Err(KalshiError::UserInputError(
-                "Not logged in, a valid token is required for requests that require authentication"
-                    .to_string(),
-            ));
-        }
-        let order_url: &str = &format!("{}/portfolio/orders", self.base_url.to_string());
+        let order_url: &str = &format!("{}/portfolio/orders", self.base_url);
 
-        match input_type {
-            OrderType::Limit => match (no_price, yes_price) {
+        if let OrderType::Limit = input_type {
+            match (no_price, yes_price) {
                 (Some(_), Some(_)) => {
                     return Err(KalshiError::UserInputError(
                         "Can only provide no_price exclusive or yes_price, can't provide both"
@@ -589,13 +522,12 @@ impl<'a> Kalshi {
                 }
                 (None, None) => {
                     return Err(KalshiError::UserInputError(
-                            "Must provide either no_price exclusive or yes_price, can't provide neither"
-                                .to_string(),
-                        ));
+                        "Must provide either no_price exclusive or yes_price, can't provide neither"
+                            .to_string(),
+                    ));
                 }
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         let unwrapped_id = match client_order_id {
@@ -620,7 +552,7 @@ impl<'a> Kalshi {
         let response = self
             .client
             .post(order_url)
-            .header("Authorization", self.curr_token.clone().unwrap())
+            .header("Authorization", self.state.curr_token.clone())
             .header("content-type", "application/json".to_string())
             .json(&order_payload)
             .send()
@@ -689,7 +621,7 @@ impl<'a> Kalshi {
 
     pub async fn batch_create_order(
         &mut self,
-        batch: Vec<OrderCreationField>,
+        _batch: Vec<OrderCreationField>,
     ) -> Result<Vec<Result<(Order, i32), KalshiError>>, KalshiError> {
         todo!()
     }
@@ -1070,6 +1002,7 @@ pub enum OrderType {
     Limit,
 }
 
+#[allow(dead_code)]
 trait OrderParams {
     fn get_params(
         self,

@@ -414,23 +414,11 @@ dependencies = [
 
 [[package]]
 name = "kalshi"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "kalshi"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9effa6645fd9fb259f83892da9f697d50e044f20d399961c253d0285643102a"
-dependencies = [
- "reqwest",
- "serde",
  "tokio",
  "uuid",
 ]
@@ -778,7 +766,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "futures",
- "kalshi 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kalshi",
  "tokio",
 ]
 

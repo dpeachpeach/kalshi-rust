@@ -2,7 +2,7 @@ use super::Kalshi;
 use crate::kalshi_error::*;
 use serde::{Deserialize, Serialize};
 
-impl Kalshi {
+impl<State> Kalshi<State> {
     /// Asynchronously retrieves the current status of the exchange.
     ///
     /// This function makes an HTTP GET request to the Kalshi exchange status endpoint
@@ -16,7 +16,7 @@ impl Kalshi {
     /// kalshi_instance.get_exchange_status().await.unwrap();
     /// ```
     pub async fn get_exchange_status(&self) -> Result<ExchangeStatus, KalshiError> {
-        let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url.to_string());
+        let exchange_status_url: &str = &format!("{}/exchange/status", self.base_url);
 
         let result: ExchangeStatus = self
             .client
@@ -26,7 +26,7 @@ impl Kalshi {
             .json()
             .await?;
 
-        return Ok(result);
+        Ok(result)
     }
 
     /// Asynchronously retrieves the exchange's trading schedule.
@@ -42,8 +42,7 @@ impl Kalshi {
     /// kalshi_instance.get_exchange_schedule().await.unwrap();
     /// ```
     pub async fn get_exchange_schedule(&self) -> Result<ExchangeScheduleStandard, KalshiError> {
-        let exchange_schedule_url: &str =
-            &format!("{}/exchange/schedule", self.base_url.to_string());
+        let exchange_schedule_url: &str = &format!("{}/exchange/schedule", self.base_url);
 
         let result: ExchangeScheduleResponse = self
             .client
@@ -52,7 +51,7 @@ impl Kalshi {
             .await?
             .json()
             .await?;
-        return Ok(result.schedule);
+        Ok(result.schedule)
     }
 }
 
