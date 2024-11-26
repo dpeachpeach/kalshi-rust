@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-impl<'a> Kalshi {
+impl Kalshi {
     /// Retrieves the current balance of the authenticated user from the Kalshi exchange.
     ///
     /// This method fetches the user's balance, requiring a valid authentication token.
@@ -555,7 +555,7 @@ impl<'a> Kalshi {
     /// ).await.unwrap();
     /// ```
     ///
-    
+
     // todo: rewrite using generics
     pub async fn create_order(
         &self,

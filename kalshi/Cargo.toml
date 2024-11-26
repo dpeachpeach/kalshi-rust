@@ -12,6 +12,16 @@ repository = "https://github.com/dpeachpeach/kalshi-rust"
 keywords = ["finance", "trading", "kalshi", "bots"]
 readme = "README.md"
 
+[features]
+default = ["websockets"]
+websockets = [
+    "dep:serde_json",
+    "dep:tokio-tungstenite",
+    "dep:futures-util",
+
+]
+tokio-stream = []
+
 [lib]
 # We would like to eventually turn this on, but the doctests require some clean-up.
 # See https://github.com/dpeachpeach/kalshi-rust/issues/7
@@ -22,8 +32,15 @@ doctest = false
 [dependencies]
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0", features = ["derive"]}
-uuid = { version = "1.5.0", features = ["v4", "fast-rng"]}
+serde = { version = "1.0", features = ["derive"] }
+uuid = { version = "1.5.0", features = ["v4", "fast-rng"] }
+serde_json = { version = "1.0.111", optional = true }
+tokio-tungstenite = { version = "0.24.0", optional = true, features = [
+    "native-tls",
+] }
+futures-util = { version = "0.3.31", optional = true }
+openssl = "0.10.68"
+base64 = "0.22.1"
 
 [dev-dependencies]
 serde_json = "1.0.111"
